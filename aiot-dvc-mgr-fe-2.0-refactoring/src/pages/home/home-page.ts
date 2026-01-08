@@ -2,7 +2,6 @@ import { createElement } from '../../shared/lib/dom';
 import { createCard, applyCardHighlight } from '../../shared/ui/card';
 import { createDeviceList } from '../../features/device-management/ui/device-list';
 import { createDeviceActions } from '../../features/device-management/ui/device-actions';
-import { createLoginForm } from '../../features/auth/ui/login-form';
 import { createProcessStepper } from '../../processes/onboarding/stepper';
 import { createMqttPanel } from '../../features/mqtt-monitoring/ui/mqtt-panel';
 import { authService } from '../../features/auth/model/auth-service';
@@ -10,8 +9,6 @@ import { authService } from '../../features/auth/model/auth-service';
 /** Render the main dashboard for the AIoT Dev Mgr learning experience. */
 export function createHomePage() {
   const container = createElement('section', { className: 'space-y-8' });
-
-  const loginSection = createLoginForm();
 
   const hero = createElement('section', {
     className: 'panel p-6 space-y-4 border border-slate-700/60 bg-gradient-to-br from-slate-900/80 to-slate-800/70',
@@ -47,6 +44,34 @@ export function createHomePage() {
   });
   featureSection.append(tileLabel, featureGrid);
 
+  const beToggleRow = createElement('div', {
+    className: 'flex flex-col md:flex-row md:items-center md:justify-between gap-3',
+  });
+  const beStatus = createElement('span', {
+    className: 'text-sm text-slate-300',
+    text: 'BE 연동 상태: Off',
+  });
+  const beToggleButton = createElement('button', {
+    className: 'px-4 py-2 text-sm font-semibold rounded-full border border-slate-600 bg-slate-800 hover:border-sky-400 transition',
+    text: 'BE 연동 켜기',
+  });
+
+  let backendEnabled = false;
+  function updateBackendStatus(enabled: boolean) {
+    backendEnabled = enabled;
+    beStatus.textContent = `BE 연동 상태: ${enabled ? 'On' : 'Off'}`;
+    beToggleButton.textContent = enabled ? 'BE 연동 끄기' : 'BE 연동 켜기';
+    beToggleButton.classList.toggle('border-sky-400 text-sky-300', enabled);
+    window.dispatchEvent(new CustomEvent('backend-toggle', { detail: { enabled } }));
+  }
+
+  beToggleButton.addEventListener('click', () => {
+    updateBackendStatus(!backendEnabled);
+  });
+
+  beToggleRow.append(beStatus, beToggleButton);
+  featureSection.append(beToggleRow);
+
   const deviceList = createDeviceList();
   const deviceActions = createDeviceActions();
   const mqttPanel = createMqttPanel();
@@ -68,7 +93,7 @@ export function createHomePage() {
     syncLock(authenticated);
   });
 
-  container.append(loginSection, hero, featureSection, deviceList, deviceActions, mqttPanel, processStepper);
+  container.append(hero, featureSection, deviceList, deviceActions, mqttPanel, processStepper);
 
   const phaseTileDescription = phaseTile.querySelector('p');
   window.addEventListener('backend-toggle', (event) => {
@@ -78,7 +103,7 @@ export function createHomePage() {
       phaseTileDescription.textContent = describePhase2(enabled);
     }
     applyCardHighlight(phaseTile, enabled);
-    syncLock(enabled);
+    syncLock(authenticated);
   });
 
   function describePhase2(enabled: boolean) {

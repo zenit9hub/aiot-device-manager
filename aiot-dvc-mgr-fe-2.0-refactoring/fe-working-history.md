@@ -226,20 +226,20 @@ FE 데모를 보는 학습자가 `Refactor Flow` 버튼을 통해 백엔드 연�
 ## 2026-01-10 07:55 - 로그인 기반 흐름 재배치
 
 **컨텍스트**:
-학생들이 먼저 로그인하고 Instant Preview/Serverless First 기능을 이해한 뒤 Phase 2 BE 연동을 살펴보게 하려면, 로그인 섹션을 최상단으로 올리고 아래 섹션들을 비활성화/잠금하면서 로그인 후 활성화 되는 흐름을 표현해야 합니다.
+학생들이 먼저 Instant Preview/Serverless First부터 이해한 뒤 BE 연동을 켜는 흐름을 보려면, 로그인 버튼을 타이틀 영역(헤더)으로 옮기고 아래 dev/monitor 섹션은 로그인 전까지 비활성화된 모습으로 보여줄 필요가 있습니다.
 
 **사용자 프롬프트**:
-> "refactoring 용어를 제거하고 서비스 중심 copy로 바꾸며, 로그인 섹션을 최상단에 두고 로그인 전엔 다른 영역들을 비활성화된 형태로 보여 주세요."
+> "앞선 1번 섹션은 제거하고 로그인 버튼을 헤더에 두고, 나머지 영역은 로그인 전엔 잠금/회색, 로그인 시 활성화된 형태로 보여 주세요."
 
 **Claude 응답**:
-- hero 타이틀을 `AIoT Device Manager 실습 페이지`로 수정하고 subtitle을 서비스 흐름 중심으로 재작성했습니다.
-- “Core Capability Tiles” 영역을 만들고 Instant Preview/Serverless First를 강조하며 Phase 2 카드 설명을 BE 토글과 연동했습니다.
-- `authService`를 이용해 로그인 상태를 추적하고, `data-locked` 속성과 CSS를 활용해 로그인 전에는 device/MQTT/stepper 영역에 안내 문구를 오버레이하면서 내용을 잠근 상태로 표시합니다.
+- `header.ts` 버튼을 “로그인”으로 교체하고 클릭 시 Firebase 로그인을 바로 실행하며, 상태 텍스트로 로그인 진행/완료를 알려주는 구조로 바꿨습니다.
+- hero에는 `AIoT Device Manager 실습 페이지` 타이틀과 서비스 지향 copy를 적용한 뒤 Phase 1 tile과 Phase 2 설명·BE 토글을 통합했습니다.
+- 로그인 상태(`authService`)를 기반으로 하단 섹션에 `data-locked` 속성과 CSS overlay를 부여해, 로그인 전에는 회색/잠금 메시지, 로그인 시에는 각 섹션이 활성화되도록 처리했습니다.
 
 **결정 사항**:
-- [x] 로그인 섹션을 최상단으로 렌더링하고 hero를 서비스 중심으로 교체
-- [x] Core Capability Tiles 라벨/카드 텍스트를 변경하고 Phase 2 카드에 토글 설명을 유지
-- [x] 로그인/BE 토글 상태에 따라 `data-locked` 처리하고, 비활성화 메시지를 추가
+- [x] header에 “로그인” 버튼 추가하고, 타이틀/서브타이틀을 서비스 중심으로 수정
+- [x] Phase 1 tile/Phase 2 card + BE toggle을 하나의 패널로 통합
+- [x] 로그인 상태에 따라 `data-locked` 오버레이로 하단 기능을 비활성화/활성화
 
 **다음 단계**:
 1. Phase 2 BE 문서 링크/예제 강화

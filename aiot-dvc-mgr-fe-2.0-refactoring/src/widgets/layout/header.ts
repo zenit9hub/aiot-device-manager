@@ -1,3 +1,4 @@
+import { authService } from '../../features/auth/model/auth-service';
 import { createButton } from '../../shared/ui/button';
 import { createElement } from '../../shared/lib/dom';
 
@@ -7,38 +8,31 @@ export function createHeader() {
   });
 
   const brand = createElement('div', { className: 'flex flex-col', text: '' });
-  const brandTitle = createElement('span', { className: 'text-xl font-bold text-white', text: 'AIoT Dev Mgr' });
-  const brandSubtitle = createElement('small', { className: 'text-slate-400', text: 'Phase 2 refactoring' });
+  const brandTitle = createElement('span', { className: 'text-xl font-bold text-white', text: 'AIoT Device Manager' });
+  const brandSubtitle = createElement('small', { className: 'text-slate-400', text: 'Real-time IoT insights with Firebase + AWS' });
   brand.append(brandTitle, brandSubtitle);
 
   const controls = createElement('div', { className: 'flex items-center gap-3' });
-  const statusBadge = createElement('span', {
-    className: 'text-sm font-medium text-slate-200 bg-white/5 px-3 py-1 rounded-full border border-white/10',
-    text: 'BE 연동: Off',
+  const loginStatus = createElement('span', {
+    className: 'text-sm text-slate-300',
+    text: '로그인 상태: 미로그인',
   });
-  const toggleButton = createButton('BE 연동 Off', { variant: 'ghost' });
-  let backendEnabled = false;
+  const loginButton = createButton('로그인', { variant: 'ghost' });
 
-  function updateToggle() {
-    toggleButton.textContent = backendEnabled ? 'BE 연동 On' : 'BE 연동 Off';
-    statusBadge.textContent = `BE 연동: ${backendEnabled ? 'On' : 'Off'}`;
-    const highlightClasses = ['bg-sky-500/70', 'text-white', 'border-transparent', 'shadow-lg'];
-    highlightClasses.forEach((cls) => toggleButton.classList.toggle(cls, backendEnabled));
-  }
-
-  toggleButton.addEventListener('click', () => {
-    backendEnabled = !backendEnabled;
-    updateToggle();
-    window.dispatchEvent(
-      new CustomEvent('backend-toggle', {
-        detail: { enabled: backendEnabled },
-      }),
-    );
+  loginButton.addEventListener('click', async (event) => {
+    event.preventDefault();
+    loginStatus.textContent = '로그인 상태: 진행 중...';
+    try {
+      await authService.loginWithGoogle();
+      loginStatus.textContent = '로그인 상태: 완료';
+      window.dispatchEvent(new CustomEvent('auth-changed', { detail: { loggedIn: true } }));
+    } catch (error) {
+      loginStatus.textContent = '로그인 상태: 실패';
+      console.warn(error);
+    }
   });
 
-  updateToggle();
-  controls.append(statusBadge, toggleButton);
-
+  controls.append(loginStatus, loginButton);
   header.append(brand, controls);
   return header;
 }
