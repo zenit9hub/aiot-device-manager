@@ -6,6 +6,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/shared/lib/test/setup.ts',
+    env: {
+      VITE_USE_FIREBASE_EMULATOR: 'true',
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

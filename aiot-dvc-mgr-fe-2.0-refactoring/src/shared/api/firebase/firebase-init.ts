@@ -3,8 +3,8 @@
  */
 
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { firebaseConfig, validateFirebaseConfig } from '@shared/config/firebase';
 
 let app: FirebaseApp;
@@ -20,7 +20,21 @@ export function initializeFirebase(): void {
   auth = getAuth(app);
   db = getFirestore(app);
 
-  console.log('[Firebase] Initialized successfully');
+  // Emulator 환경 감지 및 연결
+  const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true' ||
+                      process.env.FIRESTORE_EMULATOR_HOST !== undefined;
+
+  if (useEmulator) {
+    try {
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+      connectFirestoreEmulator(db, '127.0.0.1', 8080);
+      console.log('[Firebase] Connected to Emulators (Auth: 9099, Firestore: 8080)');
+    } catch (error) {
+      console.warn('[Firebase] Emulator connection failed:', error);
+    }
+  } else {
+    console.log('[Firebase] Initialized successfully (Production)');
+  }
 }
 
 export function getFirebaseAuth(): Auth {
