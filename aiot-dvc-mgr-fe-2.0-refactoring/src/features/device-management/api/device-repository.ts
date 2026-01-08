@@ -50,9 +50,23 @@ export function subscribeToDevices(userId: string | null, listener: DeviceListen
     orderBy('createdAt', 'desc'),
   );
 
-  return onSnapshot(devicesQuery, (snapshot) => {
-    listener(snapshot.docs.map((doc) => mapSnapshot(doc)));
-  });
+  let fallbackCleanup = () => {};
+
+  const unsubscribe = onSnapshot(
+    devicesQuery,
+    (snapshot) => {
+      listener(snapshot.docs.map((doc) => mapSnapshot(doc)));
+    },
+    (error) => {
+      console.warn('[device-repository] Firestore subscription failed', error);
+      fallbackCleanup = useFallback(listener);
+    },
+  );
+
+  return () => {
+    unsubscribe();
+    fallbackCleanup();
+  };
 }
 
 export async function createDevice(userId: string, payload: Omit<Device, 'id'>) {

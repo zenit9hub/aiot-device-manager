@@ -22,7 +22,8 @@ export function createHeader() {
   function updateToggle() {
     toggleButton.textContent = backendEnabled ? 'BE 연동 On' : 'BE 연동 Off';
     statusBadge.textContent = `BE 연동: ${backendEnabled ? 'On' : 'Off'}`;
-    toggleButton.classList.toggle('bg-sky-500/70 text-white border-transparent shadow-lg', backendEnabled);
+    const highlightClasses = ['bg-sky-500/70', 'text-white', 'border-transparent', 'shadow-lg'];
+    highlightClasses.forEach((cls) => toggleButton.classList.toggle(cls, backendEnabled));
   }
 
   toggleButton.addEventListener('click', () => {
