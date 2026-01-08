@@ -8,6 +8,7 @@ const highlightClasses = [
 ];
 
 export function applyCardHighlight(card: HTMLElement, active: boolean) {
+  card.classList.toggle('highlighted-card', active);
   highlightClasses.forEach((cls) => card.classList.toggle(cls, active));
 }
 
