@@ -11,8 +11,33 @@ export function createHeader() {
   const brandSubtitle = createElement('small', { className: 'text-slate-400', text: 'Phase 2 refactoring' });
   brand.append(brandTitle, brandSubtitle);
 
-  const actions = createButton('Refactor Flow', { variant: 'ghost' });
+  const controls = createElement('div', { className: 'flex items-center gap-3' });
+  const statusBadge = createElement('span', {
+    className: 'text-sm font-medium text-slate-200 bg-white/5 px-3 py-1 rounded-full border border-white/10',
+    text: 'BE 연동: Off',
+  });
+  const toggleButton = createButton('BE 연동 Off', { variant: 'ghost' });
+  let backendEnabled = false;
 
-  header.append(brand, actions);
+  function updateToggle() {
+    toggleButton.textContent = backendEnabled ? 'BE 연동 On' : 'BE 연동 Off';
+    statusBadge.textContent = `BE 연동: ${backendEnabled ? 'On' : 'Off'}`;
+    toggleButton.classList.toggle('bg-sky-500/70 text-white border-transparent shadow-lg', backendEnabled);
+  }
+
+  toggleButton.addEventListener('click', () => {
+    backendEnabled = !backendEnabled;
+    updateToggle();
+    window.dispatchEvent(
+      new CustomEvent('backend-toggle', {
+        detail: { enabled: backendEnabled },
+      }),
+    );
+  });
+
+  updateToggle();
+  controls.append(statusBadge, toggleButton);
+
+  header.append(brand, controls);
   return header;
 }
