@@ -21,19 +21,20 @@ export function createLoginForm() {
     text: '상태: 준비 완료',
   });
 
-  const button = createButton('Google 로그인', {
-    onClick: async (event) => {
-      event.preventDefault();
-      status.textContent = '상태: 로그인 시도 중...';
-      try {
-        await authService.loginWithGoogle();
-        status.textContent = '상태: 로그인 성공';
-      } catch (error) {
-        status.textContent = '상태: Firebase 설정 확인 필요';
-        console.warn(error);
-      }
-    },
-  });
+    const button = createButton('Google 로그인', {
+      onClick: async (event) => {
+        event.preventDefault();
+        status.textContent = '상태: 로그인 시도 중...';
+        try {
+          await authService.loginWithGoogle();
+          status.textContent = '상태: 로그인 성공';
+          window.dispatchEvent(new CustomEvent('auth-changed', { detail: { loggedIn: true } }));
+        } catch (error) {
+          status.textContent = '상태: Firebase 설정 확인 필요';
+          console.warn(error);
+        }
+      },
+    });
 
   section.append(heading, message, button, status);
   return section;

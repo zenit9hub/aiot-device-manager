@@ -222,3 +222,25 @@ FE 데모를 보는 학습자가 `Refactor Flow` 버튼을 통해 백엔드 연�
 **다음 단계**:
 1. Phase 2 BE 문서 링크/예제 강화
 2. 학습자 리포트용 설명 텍스트 정리
+
+## 2026-01-10 07:55 - 로그인 기반 흐름 재배치
+
+**컨텍스트**:
+학생들이 먼저 로그인하고 Instant Preview/Serverless First 기능을 이해한 뒤 Phase 2 BE 연동을 살펴보게 하려면, 로그인 섹션을 최상단으로 올리고 아래 섹션들을 비활성화/잠금하면서 로그인 후 활성화 되는 흐름을 표현해야 합니다.
+
+**사용자 프롬프트**:
+> "refactoring 용어를 제거하고 서비스 중심 copy로 바꾸며, 로그인 섹션을 최상단에 두고 로그인 전엔 다른 영역들을 비활성화된 형태로 보여 주세요."
+
+**Claude 응답**:
+- hero 타이틀을 `AIoT Device Manager 실습 페이지`로 수정하고 subtitle을 서비스 흐름 중심으로 재작성했습니다.
+- “Core Capability Tiles” 영역을 만들고 Instant Preview/Serverless First를 강조하며 Phase 2 카드 설명을 BE 토글과 연동했습니다.
+- `authService`를 이용해 로그인 상태를 추적하고, `data-locked` 속성과 CSS를 활용해 로그인 전에는 device/MQTT/stepper 영역에 안내 문구를 오버레이하면서 내용을 잠근 상태로 표시합니다.
+
+**결정 사항**:
+- [x] 로그인 섹션을 최상단으로 렌더링하고 hero를 서비스 중심으로 교체
+- [x] Core Capability Tiles 라벨/카드 텍스트를 변경하고 Phase 2 카드에 토글 설명을 유지
+- [x] 로그인/BE 토글 상태에 따라 `data-locked` 처리하고, 비활성화 메시지를 추가
+
+**다음 단계**:
+1. Phase 2 BE 문서 링크/예제 강화
+2. 학습자 리포트용 설명 텍스트 정리

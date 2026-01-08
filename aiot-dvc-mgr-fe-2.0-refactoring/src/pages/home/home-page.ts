@@ -5,49 +5,87 @@ import { createDeviceActions } from '../../features/device-management/ui/device-
 import { createLoginForm } from '../../features/auth/ui/login-form';
 import { createProcessStepper } from '../../processes/onboarding/stepper';
 import { createMqttPanel } from '../../features/mqtt-monitoring/ui/mqtt-panel';
+import { authService } from '../../features/auth/model/auth-service';
 
+/** Render the main dashboard for the AIoT Dev Mgr learning experience. */
 export function createHomePage() {
   const container = createElement('section', { className: 'space-y-8' });
+
+  const loginSection = createLoginForm();
 
   const hero = createElement('section', {
     className: 'panel p-6 space-y-4 border border-slate-700/60 bg-gradient-to-br from-slate-900/80 to-slate-800/70',
   });
-  const heroTitle = createElement('h1', { className: 'text-3xl font-bold text-white', text: 'Phase 2 즉시 적용 가능한 리팩토링' });
+  const heroTitle = createElement('h1', {
+    className: 'text-3xl font-bold text-white',
+    text: 'AIoT Device Manager 실습 페이지',
+  });
+  const heroSubtitle = createElement('p', {
+    className: 'text-slate-400 text-sm font-semibold',
+    text: 'Instant Preview & Serverless First 기능부터 이해하며, Phase 2 BE 연동 확장을 준비합니다.',
+  });
   const heroCopy = createElement('p', {
     className: 'text-slate-300 leading-relaxed',
-    text: 'FE 리팩토링 영역은 FSD 패턴으로 실습용 코드를 새로 구성했으며, 문서를 보면 곧바로 구조를 파악한 뒤 프로덕션급으로 고도화할 수 있도록 설계했습니다.',
+    text: '실시간 디바이스 보기와 파이어베이스 기반 인증을 통해 AIoT Dev Mgr의 핵심 흐름을 빠르게 확인하고, 이후 백엔드 통합으로 가치를 고도화하는 순서로 설계되어 있습니다.',
   });
-  const metrics = createElement('div', { className: 'grid gap-3 md:grid-cols-3' });
-  metrics.appendChild(createCard('Instant Preview', 'Vite + Tailwind + Firebase로 구성된 SPA가 곧바로 실행됩니다.', { active: true }));
-  metrics.appendChild(createCard('Serverless First', 'Firebase Auth/Firestore 중심의 실시간 기반 아키텍처.', { active: true }));
-  const phaseCard = createCard('Phase 2 Ready', describePhase2(false), { active: false });
-  metrics.appendChild(phaseCard);
+  hero.append(heroTitle, heroSubtitle, heroCopy);
 
-  hero.append(heroTitle, heroCopy, metrics);
+  const tileLabel = createElement('p', {
+    className: 'text-sm uppercase tracking-[0.2em] text-slate-500',
+    text: 'Core Capability Tiles',
+  });
+  const featureGrid = createElement('div', {
+    className: 'grid gap-3 md:grid-cols-3',
+  });
+  const instantTile = createCard('Instant Preview', 'Vite + Tailwind + Firebase 기반 SPA가 곧바로 실행되며, AIoT Dev Mgr 프론트 로직을 바로 확인할 수 있습니다.', { active: true });
+  const serverlessTile = createCard('Serverless First', 'Firebase Auth/Firestore 중심 실시간 아키텍처로 사용자/디바이스 상태를 안전하게 분리합니다.', { active: true });
+  const phaseTile = createCard('Phase 2 Ready', describePhase2(false), { active: false });
+  featureGrid.append(instantTile, serverlessTile, phaseTile);
 
-  container.append(
-    hero,
-    createLoginForm(),
-    createDeviceList(),
-    createDeviceActions(),
-    createMqttPanel(),
-    createProcessStepper(),
-  );
+  const featureSection = createElement('section', {
+    className: 'panel p-6 space-y-4 border border-slate-700/40 bg-black/40 shadow-inner',
+  });
+  featureSection.append(tileLabel, featureGrid);
 
-  const phaseCardDescription = phaseCard.querySelector('p');
-  function describePhase2(enabled: boolean) {
-    return enabled
-      ? 'Express + MySQL 백엔드를 즉시 활성화하여 Phase 2 API를 바로 실습하고 확장할 수 있습니다.'
-      : 'BE 연동 Off 상태이며, 상단 토글로 켜면 Express + MySQL 확장 흐름을 바로 확인합니다.';
+  const deviceList = createDeviceList();
+  const deviceActions = createDeviceActions();
+  const mqttPanel = createMqttPanel();
+  const processStepper = createProcessStepper();
+
+  const lockableSections = [deviceList, deviceActions, mqttPanel];
+
+  function syncLock(available: boolean) {
+    lockableSections.forEach((section) => {
+      section.setAttribute('data-locked', available ? 'false' : 'true');
+    });
   }
 
+  let authenticated = Boolean(authService.currentUser());
+  syncLock(authenticated);
+
+  window.addEventListener('auth-changed', () => {
+    authenticated = true;
+    syncLock(authenticated);
+  });
+
+  container.append(loginSection, hero, featureSection, deviceList, deviceActions, mqttPanel, processStepper);
+
+  const phaseTileDescription = phaseTile.querySelector('p');
   window.addEventListener('backend-toggle', (event) => {
     const detail = (event as CustomEvent<{ enabled: boolean }>).detail;
     const enabled = Boolean(detail.enabled);
-    if (phaseCardDescription) {
-      phaseCardDescription.textContent = describePhase2(enabled);
+    if (phaseTileDescription) {
+      phaseTileDescription.textContent = describePhase2(enabled);
     }
-    applyCardHighlight(phaseCard, enabled);
+    applyCardHighlight(phaseTile, enabled);
+    syncLock(enabled);
   });
+
+  function describePhase2(enabled: boolean) {
+    return enabled
+      ? 'Express + MySQL 백엔드가 켜져 Phase 2 API와 통합된 시나리오로 실습 가능합니다.'
+      : 'BE 연동 Off 상태입니다. 상단 토글로 켜면 Express + MySQL 기반 확장 흐름을 바로 확인합니다.';
+  }
+
   return container;
 }
