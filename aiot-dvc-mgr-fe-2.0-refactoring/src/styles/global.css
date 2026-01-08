@@ -33,22 +33,32 @@ body {
   border-radius: inherit;
   padding: 3px;
   pointer-events: none;
-  background: conic-gradient(from 0deg, #0ea5e9, #22d3ee 25%, #1d4ed8 50%, #0ea5e9 75%, transparent);
+  background: conic-gradient(from 0deg, #0ea5e9, #22d3ee 20%, #1d4ed8 40%, #0ea5e9 60%, transparent 80%, transparent 100%);
+  background-size: 600% 600%;
   mask: 
     linear-gradient(#fff 0 0) content-box, 
     linear-gradient(#fff 0 0);
   mask-composite: exclude;
   mask-composite: combine;
   -webkit-mask-composite: xor;
-  animation: highlight-border 2.5s linear infinite;
+  animation: highlight-border 4s linear infinite;
 }
 
 @keyframes highlight-border {
   0% {
     background-position: 0% 0%;
   }
+  25% {
+    background-position: 100% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0% 100%;
+  }
   100% {
-    background-position: 200% 0%;
+    background-position: 0% 0%;
   }
 }
 

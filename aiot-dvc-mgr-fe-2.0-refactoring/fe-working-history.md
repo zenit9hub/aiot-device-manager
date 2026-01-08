@@ -202,3 +202,23 @@ FE 데모를 보는 학습자가 `Refactor Flow` 버튼을 통해 백엔드 연�
 **다음 단계**:
 1. BE On/Off 애니메이션을 세부 색상으로 확장해 보기
 2. Phase 2 카드에 실제 BE 예제를 연결해 직관성 강화
+
+## 2026-01-09 23:50 - conic-gradient border animation
+
+**컨텍스트**:
+현재 테두리를 따라 흐르는 애니메이션이 실제로 움직이지 않고 있기 때문에 고정된 gradient 위치에만 머물러 보입니다.
+
+**사용자 프롬프트**:
+> "테두리를 따라 파란 선이 부드럽게 한 방향으로 흐르면서 wrap-around 되는 애니메이션을 적용해 주세요."
+
+**Claude 응답**:
+- `highlighted-card::after` 배경을 다시 `conic-gradient`로 정의하고 background-size를 크게 지정한 뒤, keyframe에서 background-position을 0→100→100→0으로 순환시켜 테두리 전체를 한 바퀴 도는 느낌을 만들었습니다.
+- 이제 gradient가 지속적으로 이동하며 빛이 테두리를 따라 1회전하는 효과를 연출합니다.
+
+**결정 사항**:
+- [x] conic-gradient + background-position 애니메이션이라 한 방향으로 테두리 루프 구현
+- [x] `npm run test` 재실행하며 안전성 확인
+
+**다음 단계**:
+1. Phase 2 BE 문서 링크/예제 강화
+2. 학습자 리포트용 설명 텍스트 정리
