@@ -1,4 +1,4 @@
-import { Device } from '../../../entities/device/device';
+import type { Device } from '../../../entities/device/device';
 import { createElement } from '../../../shared/lib/dom';
 
 const statusBadge = {

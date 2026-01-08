@@ -1,7 +1,11 @@
-import { FirebaseApp, initializeApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { Firestore, getFirestore } from 'firebase/firestore';
-import { Analytics, getAnalytics } from 'firebase/analytics';
+import { initializeApp } from 'firebase/app';
+import type { FirebaseApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import type { Auth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import type { Firestore } from 'firebase/firestore';
+import { getAnalytics } from 'firebase/analytics';
+import type { Analytics } from 'firebase/analytics';
 import { firebaseConfig, isFirebaseConfigured } from '../../shared/config/firebase-config';
 
 let firebaseApp: FirebaseApp | null = null;

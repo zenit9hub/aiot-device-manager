@@ -1,7 +1,5 @@
 import type { MqttClient as RawMqttClient } from 'mqtt';
 
-import type { MqttClient as RawMqttClient } from 'mqtt';
-
 export type MqttMessage = {
   topic: string;
   payload: string;

@@ -1,4 +1,4 @@
-import { Device } from '../../../entities/device/device';
+import type { Device } from '../../../entities/device/device';
 import {
   createDevice,
   deleteDevice,

@@ -3,7 +3,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  Firestore,
   onSnapshot,
   orderBy,
   query,
@@ -11,9 +10,9 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import type { QueryDocumentSnapshot } from 'firebase/firestore';
+import type { Firestore, QueryDocumentSnapshot } from 'firebase/firestore';
 import { getFirebaseStore } from '../../../app/providers/firebase-provider';
-import { Device } from '../../../entities/device/device';
+import type { Device } from '../../../entities/device/device';
 
 type DeviceListener = (devices: Device[]) => void;
 
@@ -74,7 +73,7 @@ export async function createDevice(userId: string, payload: Omit<Device, 'id'>) 
   return { id: docRef.id, ...payload };
 }
 
-export async function updateDeviceStatus(userId: string, deviceId: string, status: Device['status']) {
+export async function updateDeviceStatus(_userId: string, deviceId: string, status: Device['status']) {
   const store: Firestore | null = getFirebaseStore();
   if (!store) {
     const target = fallbackDevices.find((item) => item.id === deviceId);
@@ -92,7 +91,7 @@ export async function updateDeviceStatus(userId: string, deviceId: string, statu
   return { id: deviceId, status } as Device;
 }
 
-export async function deleteDevice(userId: string, deviceId: string) {
+export async function deleteDevice(_userId: string, deviceId: string) {
   const store: Firestore | null = getFirebaseStore();
   if (!store) {
     const index = fallbackDevices.findIndex((item) => item.id === deviceId);

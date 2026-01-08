@@ -1,7 +1,7 @@
 import { createElement } from '../../../shared/lib/dom';
 import { createButton } from '../../../shared/ui/button';
 import { authService } from '../../auth/model/auth-service';
-import { Device } from '../../../entities/device/device';
+import type { Device } from '../../../entities/device/device';
 import { deviceService } from '../model/device-service';
 
 const statusOptions: Device['status'][] = ['online', 'warning', 'offline'];

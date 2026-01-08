@@ -62,3 +62,37 @@ export function subscribeToDevices(userId: string | null, listener: DeviceListen
 1. Firestore/MQTT 실서비스 설정(환경 변수/브로커 URL) 확인 및 `authService` 로그인 흐름 연결
 2. Phase 2 BE API 커뮤니케이션을 위한 `deviceService` 테스트 확대 + `home-page` 문서화
 3. 테스트 커버리지 80% 목표 달성을 위한 추가 Vitest 시나리오(디바이스 CRUD, MQTT 데이터 파싱)
+1. Firestore/MQTT 실서비스 설정(환경 변수/브로커 URL) 확인 및 `authService` 로그인 흐름 연결
+2. Phase 2 BE API 커뮤니케이션을 위한 `deviceService` 테스트 확대 + `home-page` 문서화
+3. 테스트 커버리지 80% 목표 달성을 위한 추가 Vitest 시나리오(디바이스 CRUD, MQTT 데이터 파싱)
+
+## 2026-01-08 13:45 - 빌드 도중 타입 락 방지
+
+**컨텍스트**:
+`tsconfig.json`에서 `verbatimModuleSyntax`가 활성화되어 있어, build 시점에 타입만 쓰는 import를 모두 `import type`으로 표기해야 하고 `_userId`처럼 읽지 않는 파라미터도 명시적으로 무시해야 합니다.
+
+**사용자 프롬프트**:
+> "로컬 서버에서 흰화면이 뜨는 문제를 해결하려면, `npm run build`도 성공해야 합니다."
+
+**Claude 응답**:
+- `firebase-provider`, `auth-service`, 핵심 `Device`/`MQTT` 모듈의 타입들을 `import type`으로 전환하여 `verbatimModuleSyntax` 규칙을 만족시키자.
+- `device-repository`에서 실제로 쓰이지 않는 `userId` 파라미터는 `_userId`로 이름을 바꿔 lint를 통과시켰고, Firestore 타입들 역시 타입 전용 import로 정리했다.
+- 마지막으로 `npm run build`를 실행해 모든 모듈(정적 + MQTT 번들링 포함)이 정상적으로 출력되는지 확인했다.
+
+**결정 사항**:
+- [x] `firebase-provider.ts`/`auth-service.ts`/device 관련 UI/서비스/테스트에서 타입 수입은 `import type`으로 처리
+- [x] `_userId` 패턴으로 `noUnusedParameters` 위반 방지 + `deviceService`/`deviceRepository` 인터페이스 유지
+- [x] `npm run build` 성공 (생성된 번들: `dist/index...`, `dist/assets/...`, `dist/assets/mqtt.esm-CHY5Dy7j.js`)
+
+**구현 코드**:
+```typescript
+import type { Device } from '../../../entities/device/device';
+```
+```typescript
+export async function updateDeviceStatus(_userId: string, deviceId: string, status: Device['status']) { ... }
+```
+
+**다음 단계**:
+1. Phase 1 UI/테스트를 안정화하면서 Firebase/MQTT 실환경 연결 확인
+2. Phase 2 백엔드 API 인터페이스 문서화 및 테스트 명세 정리
+3. PR 전 기준에 따라 커밋 정리 및 검토 요청

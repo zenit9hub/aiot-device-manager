@@ -1,6 +1,7 @@
 import { createElement } from '../../../shared/lib/dom';
 import { createButton } from '../../../shared/ui/button';
-import { startMqttMonitoring, MqttMessage, MqttConnectionState } from '../model/mqtt-service';
+import { startMqttMonitoring } from '../model/mqtt-service';
+import type { MqttMessage, MqttConnectionState } from '../model/mqtt-service';
 
 export function createMqttPanel() {
   const section = createElement('section', {
