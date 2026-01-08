@@ -119,3 +119,25 @@ FE 데모를 보는 학습자가 `Refactor Flow` 버튼을 통해 백엔드 연�
 1. Phase 1 완료 반영된 시각/문서 상태로 리뷰 요청
 2. Phase 2 BE 연동 모듈 개발(Express, MySQL) 진행 전 API 계약 문서화
 3. 학습자 피드백 반영해 토글 상태에 따른 메시지나 안내 강화
+
+## 2026-01-09 00:32 - 카드 강조 상태 추가
+
+**컨텍스트**:
+상단 토글과 시각적 흐름을 연결하려면, 이미 완성된 두 카드와 BE 온 상태일 때 Phase 2 카드 모두 “활성화된” 테두리/그림자 스타일로 강조하면 좋습니다.
+
+**사용자 프롬프트**:
+> "Instant Preview/Serverless First 카드 테두리를 활성화된 느낌으로 바꾸고, BE On/Off에 따라 세 번째 카드도 강조/기본 테두리로 전환해 주세요."
+
+**Claude 응답**:
+- `shared/ui/card.ts`에서 highlight 클래스 목록과 `applyCardHighlight` 유틸을 추가해, `createCard` 호출 시 옵션으로 활성화 상태를 부여할 수 있게 했습니다.
+- `home-page.ts`에서 첫 두 카드를 `active: true`로 렌더링하고 `backend-toggle` 이벤트에서 Phase 2 카드를 강조/제거하도록 연결했습니다.
+- 결과적으로 “Phase 1 실습 → Phase 2 확장” 시나리오가 시각적으로도 즉시 드러납니다.
+
+**결정 사항**:
+- [x] highlight 클래스 리스트 및 `applyCardHighlight`를 `shared/ui/card.ts`에 도입
+- [x] 첫 두 카드는 기본 렌더링부터 강조, Phase 2 카드는 토글 상태에 따라 강조
+- [x] 빌드/테스트(CI) 모두 통과
+
+**다음 단계**:
+1. Phase 2 BE API 연동 스펙 문서화
+2. 실습자 리포트용 설명문(토글 포함) 정리 및 스크린샷 반영

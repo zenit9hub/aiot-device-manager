@@ -1,5 +1,5 @@
 import { createElement } from '../../shared/lib/dom';
-import { createCard } from '../../shared/ui/card';
+import { createCard, applyCardHighlight } from '../../shared/ui/card';
 import { createDeviceList } from '../../features/device-management/ui/device-list';
 import { createDeviceActions } from '../../features/device-management/ui/device-actions';
 import { createLoginForm } from '../../features/auth/ui/login-form';
@@ -18,9 +18,9 @@ export function createHomePage() {
     text: 'FE 리팩토링 영역은 FSD 패턴으로 실습용 코드를 새로 구성했으며, 문서를 보면 곧바로 구조를 파악한 뒤 프로덕션급으로 고도화할 수 있도록 설계했습니다.',
   });
   const metrics = createElement('div', { className: 'grid gap-3 md:grid-cols-3' });
-  metrics.appendChild(createCard('Instant Preview', 'Vite + Tailwind + Firebase로 구성된 SPA가 곧바로 실행됩니다.'));
-  metrics.appendChild(createCard('Serverless First', 'Firebase Auth/Firestore 중심의 실시간 기반 아키텍처.'));
-  const phaseCard = createCard('Phase 2 Ready', describePhase2(false));
+  metrics.appendChild(createCard('Instant Preview', 'Vite + Tailwind + Firebase로 구성된 SPA가 곧바로 실행됩니다.', { active: true }));
+  metrics.appendChild(createCard('Serverless First', 'Firebase Auth/Firestore 중심의 실시간 기반 아키텍처.', { active: true }));
+  const phaseCard = createCard('Phase 2 Ready', describePhase2(false), { active: false });
   metrics.appendChild(phaseCard);
 
   hero.append(heroTitle, heroCopy, metrics);
@@ -43,9 +43,11 @@ export function createHomePage() {
 
   window.addEventListener('backend-toggle', (event) => {
     const detail = (event as CustomEvent<{ enabled: boolean }>).detail;
+    const enabled = Boolean(detail.enabled);
     if (phaseCardDescription) {
-      phaseCardDescription.textContent = describePhase2(Boolean(detail.enabled));
+      phaseCardDescription.textContent = describePhase2(enabled);
     }
+    applyCardHighlight(phaseCard, enabled);
   });
   return container;
 }
