@@ -10,8 +10,8 @@ import { authService } from '../../features/auth/model/auth-service';
 export function createHomePage() {
   const container = createElement('section', { className: 'space-y-8' });
 
-  const hero = createElement('section', {
-    className: 'panel p-6 space-y-4 border border-slate-700/60 bg-gradient-to-br from-slate-900/80 to-slate-800/70',
+  const introPanel = createElement('section', {
+    className: 'panel p-6 space-y-6 border border-slate-700/60 bg-gradient-to-br from-slate-900/80 to-slate-800/70 shadow-inner',
   });
   const heroTitle = createElement('h1', {
     className: 'text-3xl font-bold text-white',
@@ -25,7 +25,7 @@ export function createHomePage() {
     className: 'text-slate-300 leading-relaxed',
     text: '실시간 디바이스 보기와 파이어베이스 기반 인증을 통해 AIoT Dev Mgr의 핵심 흐름을 빠르게 확인하고, 이후 백엔드 통합으로 가치를 고도화하는 순서로 설계되어 있습니다.',
   });
-  hero.append(heroTitle, heroSubtitle, heroCopy);
+  introPanel.append(heroTitle, heroSubtitle, heroCopy);
 
   const tileLabel = createElement('p', {
     className: 'text-sm uppercase tracking-[0.2em] text-slate-500',
@@ -39,13 +39,10 @@ export function createHomePage() {
   const phaseTile = createCard('Phase 2 Ready', describePhase2(false), { active: false });
   featureGrid.append(instantTile, serverlessTile, phaseTile);
 
-  const featureSection = createElement('section', {
-    className: 'panel p-6 space-y-4 border border-slate-700/40 bg-black/40 shadow-inner',
-  });
-  featureSection.append(tileLabel, featureGrid);
+  introPanel.append(tileLabel, featureGrid);
 
   const beToggleRow = createElement('div', {
-    className: 'flex flex-col md:flex-row md:items-center md:justify-between gap-3',
+    className: 'flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-t border-slate-700/40 pt-4',
   });
   const beStatus = createElement('span', {
     className: 'text-sm text-slate-300',
@@ -70,14 +67,14 @@ export function createHomePage() {
   });
 
   beToggleRow.append(beStatus, beToggleButton);
-  featureSection.append(beToggleRow);
+  introPanel.append(beToggleRow);
 
   const deviceList = createDeviceList();
   const deviceActions = createDeviceActions();
   const mqttPanel = createMqttPanel();
   const processStepper = createProcessStepper();
 
-  const lockableSections = [deviceList, deviceActions, mqttPanel];
+  const lockableSections = [deviceList, deviceActions, mqttPanel, processStepper];
 
   function syncLock(available: boolean) {
     lockableSections.forEach((section) => {
@@ -88,12 +85,13 @@ export function createHomePage() {
   let authenticated = Boolean(authService.currentUser());
   syncLock(authenticated);
 
-  window.addEventListener('auth-changed', () => {
-    authenticated = true;
+  window.addEventListener('auth-changed', (event) => {
+    const detail = (event as CustomEvent<{ loggedIn: boolean }>).detail;
+    authenticated = Boolean(detail?.loggedIn);
     syncLock(authenticated);
   });
 
-  container.append(hero, featureSection, deviceList, deviceActions, mqttPanel, processStepper);
+  container.append(introPanel, deviceList, deviceActions, mqttPanel, processStepper);
 
   const phaseTileDescription = phaseTile.querySelector('p');
   window.addEventListener('backend-toggle', (event) => {
