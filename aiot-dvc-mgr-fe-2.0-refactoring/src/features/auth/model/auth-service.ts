@@ -12,6 +12,7 @@ import {
   GoogleAuthProvider,
   User,
   UserCredential,
+  Auth,
 } from 'firebase/auth';
 import { getFirebaseAuth } from '@shared/api/firebase/firebase-init';
 

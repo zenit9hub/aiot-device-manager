@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DeviceService } from './device-service';
 import { Device, DeviceCreateInput, DeviceUpdateInput } from './types';
-import { getFirestore, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, deleteDoc } from 'firebase/firestore';
 
 describe('DeviceService', () => {
   let deviceService: DeviceService;
