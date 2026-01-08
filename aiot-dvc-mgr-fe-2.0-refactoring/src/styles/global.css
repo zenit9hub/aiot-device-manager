@@ -31,24 +31,24 @@ body {
   position: absolute;
   inset: -6px;
   border-radius: inherit;
-  border: 2px solid rgba(59, 130, 246, 0.35);
-  opacity: 0;
-  animation: highlight-border 3s infinite;
+  padding: 3px;
   pointer-events: none;
+  background: conic-gradient(from 0deg, #0ea5e9, #22d3ee 25%, #1d4ed8 50%, #0ea5e9 75%, transparent);
+  mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  mask-composite: combine;
+  -webkit-mask-composite: xor;
+  animation: highlight-border 2.5s linear infinite;
 }
 
 @keyframes highlight-border {
   0% {
-    opacity: 0;
-    transform: rotate(0deg) scale(0.95);
-  }
-  50% {
-    opacity: 1;
-    transform: rotate(6deg) scale(1);
+    background-position: 0% 0%;
   }
   100% {
-    opacity: 0;
-    transform: rotate(12deg) scale(1.05);
+    background-position: 200% 0%;
   }
 }
 
