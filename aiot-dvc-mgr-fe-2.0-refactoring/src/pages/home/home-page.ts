@@ -2,7 +2,6 @@ import { createElement } from '../../shared/lib/dom';
 import { createCard, applyCardHighlight } from '../../shared/ui/card';
 import { createDeviceList } from '../../features/device-management/ui/device-list';
 import { createDeviceActions } from '../../features/device-management/ui/device-actions';
-import { createProcessStepper } from '../../processes/onboarding/stepper';
 import { createMqttPanel } from '../../features/mqtt-monitoring/ui/mqtt-panel';
 import { authService } from '../../features/auth/model/auth-service';
 
@@ -74,9 +73,8 @@ export function createHomePage() {
   const deviceList = createDeviceList();
   const deviceActions = createDeviceActions();
   const mqttPanel = createMqttPanel();
-  const processStepper = createProcessStepper();
 
-  const lockableSections = [deviceList, deviceActions, mqttPanel, processStepper];
+  const lockableSections = [deviceList, deviceActions, mqttPanel];
 
   function syncLock(available: boolean) {
     lockableSections.forEach((section) => {
@@ -93,7 +91,7 @@ export function createHomePage() {
     syncLock(authenticated);
   });
 
-  container.append(introPanel, deviceList, deviceActions, mqttPanel, processStepper);
+  container.append(introPanel, deviceList, deviceActions, mqttPanel);
 
   function describePhase2(enabled: boolean) {
     return enabled
