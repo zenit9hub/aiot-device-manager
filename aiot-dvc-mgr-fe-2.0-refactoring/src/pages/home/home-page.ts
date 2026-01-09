@@ -41,6 +41,8 @@ export function createHomePage() {
 
   introPanel.append(tileLabel, featureGrid);
 
+  const phaseTileDescription = phaseTile.querySelector('p');
+
   const beToggleRow = createElement('div', {
     className: 'flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-t border-slate-700/40 pt-4',
   });
@@ -59,7 +61,8 @@ export function createHomePage() {
     beStatus.textContent = `BE 연동 상태: ${enabled ? 'On' : 'Off'}`;
     beToggleButton.textContent = enabled ? 'BE 연동 끄기' : 'BE 연동 켜기';
     beToggleButton.classList.toggle('border-sky-400 text-sky-300', enabled);
-    window.dispatchEvent(new CustomEvent('backend-toggle', { detail: { enabled } }));
+    updatePhaseTileState(enabled);
+    syncLock(authenticated);
   }
 
   beToggleButton.addEventListener('click', () => {
@@ -93,21 +96,17 @@ export function createHomePage() {
 
   container.append(introPanel, deviceList, deviceActions, mqttPanel, processStepper);
 
-  const phaseTileDescription = phaseTile.querySelector('p');
-  window.addEventListener('backend-toggle', (event) => {
-    const detail = (event as CustomEvent<{ enabled: boolean }>).detail;
-    const enabled = Boolean(detail.enabled);
-    if (phaseTileDescription) {
-      phaseTileDescription.textContent = describePhase2(enabled);
-    }
-    applyCardHighlight(phaseTile, enabled);
-    syncLock(authenticated);
-  });
-
   function describePhase2(enabled: boolean) {
     return enabled
       ? 'Express + MySQL 백엔드가 켜져 Phase 2 API와 통합된 시나리오로 실습 가능합니다.'
       : 'BE 연동 Off 상태입니다. 상단 토글로 켜면 Express + MySQL 기반 확장 흐름을 바로 확인합니다.';
+  }
+
+  function updatePhaseTileState(enabled: boolean) {
+    if (phaseTileDescription) {
+      phaseTileDescription.textContent = describePhase2(enabled);
+    }
+    applyCardHighlight(phaseTile, enabled);
   }
 
   return container;
