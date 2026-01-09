@@ -1,3 +1,4 @@
+import type { User } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { getFirebaseStore } from '../../app/providers/firebase-provider';
 import { createDeviceActions } from '../../features/device-management/ui/device-actions';
@@ -131,7 +132,37 @@ export function createHomePage() {
   let lastFirestoreCheckUser: string | null = null;
   let firestoreCheckInFlight = false;
 
-  async function verifyFirestoreAccess(userId: string) {
+  function buildUserPayload(user: User, isNew: boolean) {
+    const primaryProvider = user.providerData[0];
+    const providerId = primaryProvider?.providerId ?? user.providerId ?? 'unknown';
+    const providerDetails = user.providerData.map((provider) => ({
+      providerId: provider.providerId,
+      uid: provider.uid,
+      email: provider.email ?? null,
+      displayName: provider.displayName ?? null,
+      phoneNumber: provider.phoneNumber ?? null,
+      photoURL: provider.photoURL ?? null,
+    }));
+    const payload: Record<string, unknown> = {
+      userInfo: {
+        uid: user.uid,
+        email: user.email ?? null,
+        displayName: user.displayName ?? null,
+        photoURL: user.photoURL ?? null,
+        provider: providerId,
+      },
+      email: user.email ?? null,
+      provider: providerId,
+      providers: providerDetails,
+      lastLoginAt: serverTimestamp(),
+    };
+    if (isNew) {
+      payload.createdAt = serverTimestamp();
+    }
+    return payload;
+  }
+
+  async function verifyFirestoreAccess(user: User) {
     if (firestoreCheckInFlight) {
       return;
     }
@@ -142,10 +173,12 @@ export function createHomePage() {
     }
     firestoreCheckInFlight = true;
     try {
-      const userDoc = doc(store, 'users', userId);
-      await setDoc(userDoc, { lastLoginAt: serverTimestamp() }, { merge: true });
+      const userDoc = doc(store, 'users', user.uid);
       const snapshot = await getDoc(userDoc);
-      setChecklist(firestoreChecklist, snapshot.exists());
+      const payload = buildUserPayload(user, !snapshot.exists());
+      await setDoc(userDoc, payload, { merge: true });
+      const updated = await getDoc(userDoc);
+      setChecklist(firestoreChecklist, updated.exists());
     } catch (error) {
       console.warn('[checklist] Firestore 권한 확인 실패', error);
       setChecklist(firestoreChecklist, false);
@@ -166,7 +199,7 @@ export function createHomePage() {
       return;
     }
     lastFirestoreCheckUser = user.uid;
-    verifyFirestoreAccess(user.uid);
+    verifyFirestoreAccess(user);
   }
 
   updateAuthChecklist();

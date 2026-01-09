@@ -84,7 +84,7 @@ function resolveUserDevicesCollection(store: Firestore, userId: string) {
 export function subscribeToDevices(userId: string | null, listener: DeviceListener) {
   const resolvedUserId = resolveUser(userId);
   const store = getFirebaseStore();
-  if (!store) {
+  if (!store || !userId) {
     return useFallback(resolvedUserId, listener);
   }
 

@@ -1,5 +1,7 @@
 import { createElement } from '../../../shared/lib/dom';
+import { createButton } from '../../../shared/ui/button';
 import { createDeviceCard } from './device-card';
+import type { Device } from '../../../entities/device/device';
 import { deviceService } from '../model/device-service';
 import { authService } from '../../auth/model/auth-service';
 
@@ -17,27 +19,231 @@ export function createDeviceList() {
   const statusNote = createElement('p', { className: 'text-xs text-slate-400', text: '실시간 구독 대기 중...' });
   const gallery = createElement('div', { className: 'grid gap-3 md:grid-cols-2' });
 
-  section.append(title, description, statusNote, gallery);
+  const detailPanel = createElement('div', {
+    className: 'mt-4 rounded-2xl border border-slate-700/50 bg-slate-900/60 p-4 space-y-3',
+  });
+  const detailTitle = createElement('h3', { className: 'text-lg font-semibold text-white', text: '선택 디바이스 실시간 그래프' });
+  const detailMeta = createElement('p', {
+    className: 'text-sm text-slate-300',
+    text: '디바이스를 선택하면 현재 상태 기반의 실시간 그래프를 표시합니다.',
+  });
+  const detailValue = createElement('p', {
+    className: 'text-sm text-slate-200 hidden',
+    text: '',
+  });
+  const detailHint = createElement('p', {
+    className: 'text-xs text-slate-500',
+    text: '샘플은 2초 간격으로 갱신됩니다.',
+  });
+
+  const chartWrapper = createElement('div', {
+    className: 'relative h-32 w-full rounded-xl border border-white/10 bg-slate-950/40',
+  });
+  const chartSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  chartSvg.setAttribute('viewBox', '0 0 100 40');
+  chartSvg.setAttribute('preserveAspectRatio', 'none');
+  chartSvg.classList.add('h-full', 'w-full');
+
+  const chartLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  chartLine.setAttribute('fill', 'none');
+  chartLine.setAttribute('stroke', '#38bdf8');
+  chartLine.setAttribute('stroke-width', '2');
+  chartLine.setAttribute('stroke-linecap', 'round');
+  chartLine.setAttribute('stroke-linejoin', 'round');
+  chartSvg.append(chartLine);
+  chartWrapper.append(chartSvg);
+
+  detailPanel.append(detailTitle, detailMeta, detailValue, chartWrapper, detailHint);
+  section.append(title, description, statusNote, gallery, detailPanel);
 
   let unsubscribe: (() => void) | null = null;
+  let currentUserId = authService.currentUser()?.uid ?? 'demo-user';
+  let selectedDevice: Device | null = null;
+  let latestDevices: Device[] = [];
+  let telemetryTimer: number | null = null;
+  let telemetryValues: number[] = [];
+  const maxPoints = 24;
+
+  function buildNextValue(device: Device) {
+    const base =
+      device.status === 'online' ? 82 :
+        device.status === 'warning' ? 58 :
+          28;
+    const jitter = (Math.random() - 0.5) * 14;
+    return Math.max(5, Math.min(100, base + jitter));
+  }
+
+  function renderChart(values: number[]) {
+    if (!values.length) {
+      chartLine.setAttribute('points', '');
+      return;
+    }
+    const points = values
+      .map((value, index) => {
+        const x = (index / Math.max(values.length - 1, 1)) * 100;
+        const y = 40 - (value / 100) * 40;
+        return `${x},${y}`;
+      })
+      .join(' ');
+    chartLine.setAttribute('points', points);
+  }
+
+  function stopTelemetry() {
+    if (telemetryTimer !== null) {
+      clearInterval(telemetryTimer);
+      telemetryTimer = null;
+    }
+    telemetryValues = [];
+    renderChart(telemetryValues);
+  }
+
+  function startTelemetry(device: Device) {
+    stopTelemetry();
+    telemetryValues = Array.from({ length: maxPoints }, () => buildNextValue(device));
+    renderChart(telemetryValues);
+    telemetryTimer = window.setInterval(() => {
+      const activeDevice = selectedDevice ?? device;
+      const nextValue = buildNextValue(activeDevice);
+      telemetryValues.push(nextValue);
+      if (telemetryValues.length > maxPoints) {
+        telemetryValues.shift();
+      }
+      renderChart(telemetryValues);
+      detailValue.textContent = `현재 지표: ${nextValue.toFixed(1)} · 상태: ${activeDevice.status.toUpperCase()}`;
+    }, 2000);
+  }
+
+  function updateDetailPanel(device: Device | null) {
+    if (!device) {
+      detailMeta.textContent = '디바이스를 선택하면 현재 상태 기반의 실시간 그래프를 표시합니다.';
+      detailValue.textContent = '';
+      detailValue.classList.add('hidden');
+      stopTelemetry();
+      return;
+    }
+    detailMeta.textContent = `토픽: ${device.topicPath} · 위치: ${device.location}`;
+    detailValue.classList.remove('hidden');
+    detailValue.textContent = `현재 지표: -- · 상태: ${device.status.toUpperCase()}`;
+    startTelemetry(device);
+  }
+
+  function setSelectedDevice(device: Device | null) {
+    selectedDevice = device;
+    updateDetailPanel(device);
+    renderGallery();
+  }
+
+  function confirmDeviceRemoval() {
+    return new Promise<boolean>((resolve) => {
+      const overlay = createElement('div', {
+        className:
+          'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4',
+      });
+      const modal = createElement('div', {
+        className: 'panel w-full max-w-sm p-5 space-y-4 border border-slate-700/60',
+      });
+      const message = createElement('p', {
+        className: 'text-base text-slate-100',
+        text: '디바이스를 제거하시겠습니까?',
+      });
+      const buttonRow = createElement('div', { className: 'flex justify-end gap-2' });
+      const cancelButton = createButton('아니오', {
+        variant: 'ghost',
+        onClick: () => {
+          cleanup(false);
+        },
+      });
+      const confirmButton = createButton('예', {
+        variant: 'ghost',
+        onClick: () => {
+          cleanup(true);
+        },
+      });
+      cancelButton.classList.add('border-sky-400', 'text-sky-200', 'bg-slate-800/70', 'ring-2', 'ring-sky-400/40');
+
+      function cleanup(result: boolean) {
+        document.removeEventListener('keydown', handleKeydown);
+        overlay.remove();
+        resolve(result);
+      }
+
+      function handleKeydown(event: KeyboardEvent) {
+        if (event.key !== 'Enter') {
+          return;
+        }
+        const active = document.activeElement;
+        if (active instanceof HTMLButtonElement && overlay.contains(active)) {
+          active.click();
+          return;
+        }
+        cancelButton.click();
+      }
+
+      overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) {
+          cleanup(false);
+        }
+      });
+
+      buttonRow.append(cancelButton, confirmButton);
+      modal.append(message, buttonRow);
+      overlay.append(modal);
+      document.body.appendChild(overlay);
+      document.addEventListener('keydown', handleKeydown);
+      cancelButton.focus();
+    });
+  }
 
   function subscribeForUser(userId: string | null) {
     const resolvedUserId = userId ?? 'demo-user';
+    currentUserId = resolvedUserId;
     statusNote.textContent = `실시간 구독: ${resolvedUserId} (Firebase 설정 시 실제 devices 컬렉션을 구독합니다)`;
     unsubscribe?.();
     unsubscribe = deviceService.subscribe(resolvedUserId, (devices) => {
-      gallery.innerHTML = '';
-      if (!devices.length) {
-        gallery.appendChild(
-          createElement('p', {
-            className: 'text-sm text-slate-400',
-            text: '감지된 디바이스가 없습니다. Firestore devices 컬렉션을 확인해 주세요.',
-          }),
-        );
+      latestDevices = devices;
+      const matchingSelected = selectedDevice
+        ? devices.find((device) => device.id === selectedDevice?.id) ?? null
+        : null;
+      if (!matchingSelected && selectedDevice) {
+        setSelectedDevice(null);
         return;
       }
+      if (matchingSelected && selectedDevice !== matchingSelected) {
+        selectedDevice = matchingSelected;
+        detailValue.textContent = `현재 지표: -- · 상태: ${matchingSelected.status.toUpperCase()}`;
+        detailMeta.textContent = `토픽: ${matchingSelected.topicPath} · 위치: ${matchingSelected.location}`;
+      }
+      renderGallery();
+    });
+  }
 
-      devices.forEach((device) => gallery.appendChild(createDeviceCard(device)));
+  function renderGallery() {
+    gallery.innerHTML = '';
+    if (!latestDevices.length) {
+      gallery.appendChild(
+        createElement('p', {
+          className: 'text-sm text-slate-400',
+          text: '감지된 디바이스가 없습니다. Firestore devices 컬렉션을 확인해 주세요.',
+        }),
+      );
+      return;
+    }
+
+    latestDevices.forEach((device) => {
+      const card = createDeviceCard(device, {
+        selected: device.id === selectedDevice?.id,
+        onSelect: () => {
+          setSelectedDevice(device);
+        },
+        onRemove: async () => {
+          const confirmed = await confirmDeviceRemoval();
+          if (!confirmed) {
+            return;
+          }
+          await deviceService.remove(currentUserId, device.id);
+        },
+      });
+      gallery.appendChild(card);
     });
   }
 
