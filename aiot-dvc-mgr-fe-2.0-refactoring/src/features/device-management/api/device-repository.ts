@@ -110,10 +110,10 @@ export function subscribeToDevices(userId: string | null, listener: DeviceListen
   };
 }
 
-export async function createDevice(userId: string, payload: Omit<Device, 'id'>) {
+export async function createDevice(userId: string | null, payload: Omit<Device, 'id'>) {
   const resolvedUserId = resolveUser(userId);
   const store: Firestore | null = getFirebaseStore();
-  if (!store) {
+  if (!store || !userId) {
     const devices = getFallbackDevices(resolvedUserId);
     const id = `mock-${Date.now()}`;
     const newDevice: Device = {
@@ -140,10 +140,10 @@ export async function createDevice(userId: string, payload: Omit<Device, 'id'>) 
   return { id: docRef.id, ...payload };
 }
 
-export async function updateDeviceStatus(_userId: string, deviceId: string, status: Device['status']) {
+export async function updateDeviceStatus(_userId: string | null, deviceId: string, status: Device['status']) {
   const resolvedUserId = resolveUser(_userId);
   const store: Firestore | null = getFirebaseStore();
-  if (!store) {
+  if (!store || !_userId) {
     const devices = getFallbackDevices(resolvedUserId);
     const target = devices.find((item) => item.id === deviceId);
     if (target) {
@@ -162,10 +162,10 @@ export async function updateDeviceStatus(_userId: string, deviceId: string, stat
   return { id: deviceId, status } as Device;
 }
 
-export async function deleteDevice(_userId: string, deviceId: string) {
+export async function deleteDevice(_userId: string | null, deviceId: string) {
   const resolvedUserId = resolveUser(_userId);
   const store: Firestore | null = getFirebaseStore();
-  if (!store) {
+  if (!store || !_userId) {
     const devices = getFallbackDevices(resolvedUserId);
     const index = devices.findIndex((item) => item.id === deviceId);
     if (index >= 0) {

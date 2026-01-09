@@ -57,7 +57,7 @@ export function createDeviceActions() {
   const createButtonElement = createButton('디바이스 등록', {
     onClick: async (event) => {
       event.preventDefault();
-      const userId = authService.currentUser()?.uid ?? 'demo-user';
+      const userId = authService.currentUser()?.uid ?? null;
       const name = nameInput.value.trim();
       const location = locationInput.value.trim();
       const topicPath = topicInput.value.trim();
@@ -73,7 +73,9 @@ export function createDeviceActions() {
         topicPath,
         lastSeen: '방금',
       });
-      createMessage.textContent = '새 디바이스를 등록했습니다.';
+      createMessage.textContent = userId
+        ? '새 디바이스를 등록했습니다.'
+        : '로그인 전 상태이므로 데모 목록에 디바이스를 추가했습니다.';
       nameInput.value = '';
       locationInput.value = '';
       topicInput.value = '';
@@ -99,7 +101,7 @@ export function createDeviceActions() {
     variant: 'ghost',
     onClick: async (event) => {
       event.preventDefault();
-      const userId = authService.currentUser()?.uid ?? 'demo-user';
+      const userId = authService.currentUser()?.uid ?? null;
       const deviceId = updateIdInput.value.trim();
       if (!deviceId) {
         updateMessage.textContent = '업데이트할 디바이스 ID를 입력하세요.';
@@ -107,7 +109,7 @@ export function createDeviceActions() {
       }
       updateMessage.textContent = '상태 업데이트 중...';
       await deviceService.updateStatus(userId, deviceId, updateStatusSelect.value as Device['status']);
-      updateMessage.textContent = '상태를 바꿨습니다.';
+      updateMessage.textContent = userId ? '상태를 바꿨습니다.' : '로그인 전 상태이므로 데모 목록을 업데이트했습니다.';
     },
   });
 

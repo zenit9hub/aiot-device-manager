@@ -11,15 +11,15 @@ export const deviceService = {
     return subscribeToDevices(userId, listener);
   },
 
-  async create(userId: string, payload: Omit<Device, 'id'>) {
+  async create(userId: string | null, payload: Omit<Device, 'id'>) {
     return createDevice(userId, payload);
   },
 
-  async updateStatus(userId: string, deviceId: string, status: Device['status']) {
+  async updateStatus(userId: string | null, deviceId: string, status: Device['status']) {
     return updateDeviceStatus(userId, deviceId, status);
   },
 
-  async remove(userId: string, deviceId: string) {
+  async remove(userId: string | null, deviceId: string) {
     return deleteDevice(userId, deviceId);
   },
 };

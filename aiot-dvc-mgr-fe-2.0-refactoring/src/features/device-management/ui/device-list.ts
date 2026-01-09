@@ -58,7 +58,7 @@ export function createDeviceList() {
   section.append(title, description, statusNote, gallery, detailPanel);
 
   let unsubscribe: (() => void) | null = null;
-  let currentUserId = authService.currentUser()?.uid ?? 'demo-user';
+  let currentUserId: string | null = authService.currentUser()?.uid ?? null;
   let selectedDevice: Device | null = null;
   let latestDevices: Device[] = [];
   let telemetryTimer: number | null = null;
@@ -279,10 +279,10 @@ export function createDeviceList() {
 
   function subscribeForUser(userId: string | null) {
     const resolvedUserId = userId ?? 'demo-user';
-    currentUserId = resolvedUserId;
+    currentUserId = userId;
     statusNote.textContent = `실시간 구독: ${resolvedUserId} (Firebase 설정 시 실제 devices 컬렉션을 구독합니다)`;
     unsubscribe?.();
-    unsubscribe = deviceService.subscribe(resolvedUserId, (devices) => {
+    unsubscribe = deviceService.subscribe(userId, (devices) => {
       latestDevices = devices;
       const matchingSelected = selectedDevice
         ? devices.find((device) => device.id === selectedDevice?.id) ?? null
