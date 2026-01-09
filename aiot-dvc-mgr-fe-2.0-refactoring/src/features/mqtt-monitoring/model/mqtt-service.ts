@@ -17,12 +17,12 @@ const brokerUrl = (import.meta.env.VITE_MQTT_BROKER_URL ?? '').trim();
 const defaultTopic = import.meta.env.VITE_MQTT_TOPIC ?? 'aiot/devices/#';
 let mqttClient: RawMqttClient | null = null;
 
-function createSimulationMessage() {
+function createSimulationMessage(topic = 'simulation/sensor') {
   const temperature = (20 + Math.random() * 12).toFixed(1);
   const humidity = (40 + Math.random() * 15).toFixed(1);
   const battery = (60 + Math.random() * 20).toFixed(0);
   return {
-    topic: 'simulation/sensor',
+    topic,
     payload: JSON.stringify({ temperature, humidity, battery }),
     receivedAt: new Date().toISOString(),
   };
@@ -31,11 +31,13 @@ function createSimulationMessage() {
 export async function startMqttMonitoring(
   onMessage: (message: MqttMessage) => void,
   onStatus?: (state: MqttConnectionState) => void,
+  options: { forceSimulation?: boolean } = {},
 ): Promise<() => void> {
-  if (!brokerUrl) {
+  const useSimulation = options.forceSimulation || !brokerUrl;
+  if (useSimulation) {
     onStatus?.({ status: 'simulation' });
-    onMessage(createSimulationMessage());
-    const timer = setInterval(() => onMessage(createSimulationMessage()), 3500);
+    onMessage(createSimulationMessage(defaultTopic));
+    const timer = setInterval(() => onMessage(createSimulationMessage(defaultTopic)), 3500);
     return () => clearInterval(timer);
   }
 
@@ -81,5 +83,65 @@ export async function startMqttMonitoring(
   return () => {
     mqttClient?.end(true);
     mqttClient = null;
+  };
+}
+
+export async function startMqttTopicStream(
+  topic: string,
+  onMessage: (message: MqttMessage) => void,
+  onStatus?: (state: MqttConnectionState) => void,
+  options: { forceSimulation?: boolean } = {},
+): Promise<() => void> {
+  const targetTopic = topic?.trim() || defaultTopic;
+
+  const useSimulation = options.forceSimulation || !brokerUrl;
+  if (useSimulation) {
+    onStatus?.({ status: 'simulation' });
+    onMessage(createSimulationMessage(targetTopic));
+    const timer = setInterval(() => onMessage(createSimulationMessage(targetTopic)), 3500);
+    return () => clearInterval(timer);
+  }
+
+  onStatus?.({ status: 'connecting' });
+  const mqttModule = await import('mqtt');
+  const connectFn = (
+    mqttModule.connect ||
+    (mqttModule.default as unknown as { connect?: typeof mqttModule.connect }).connect ||
+    (mqttModule.default as unknown as typeof mqttModule.connect)
+  ) as (url: string, opts?: unknown) => RawMqttClient;
+
+  if (typeof connectFn !== 'function') {
+    onStatus?.({ status: 'error', lastError: 'mqtt 연결 함수가 없습니다.' });
+    return () => undefined;
+  }
+
+  const client = connectFn(brokerUrl, {
+    clientId: `aiot-topic-${Date.now()}`,
+    reconnectPeriod: 3000,
+  });
+
+  client.on('connect', () => onStatus?.({ status: 'connected' }));
+  client.on('reconnect', () => onStatus?.({ status: 'connecting' }));
+  client.on('offline', () => onStatus?.({ status: 'disconnected' }));
+  client.on('error', (error: Error) => onStatus?.({ status: 'error', lastError: error.message }));
+
+  client.subscribe(targetTopic, (err) => {
+    if (err) {
+      onStatus?.({ status: 'error', lastError: err.message });
+    } else {
+      onStatus?.({ status: 'connected' });
+    }
+  });
+
+  client.on('message', (receivedTopic, payload) => {
+    onMessage({
+      topic: receivedTopic,
+      payload: payload.toString(),
+      receivedAt: new Date().toISOString(),
+    });
+  });
+
+  return () => {
+    client.end(true);
   };
 }

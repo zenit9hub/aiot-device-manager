@@ -4,6 +4,7 @@ import { createDeviceCard } from './device-card';
 import type { Device } from '../../../entities/device/device';
 import { deviceService } from '../model/device-service';
 import { authService } from '../../auth/model/auth-service';
+import { startMqttTopicStream } from '../../mqtt-monitoring/model/mqtt-service';
 
 export function createDeviceList() {
   const section = createElement('section', {
@@ -63,6 +64,10 @@ export function createDeviceList() {
   let telemetryTimer: number | null = null;
   let telemetryValues: number[] = [];
   const maxPoints = 24;
+  let mqttCleanup: (() => void) | null = null;
+  let lastMessageAt: number | null = null;
+  let offlineTimer: number | null = null;
+  let streamToken = 0;
 
   function buildNextValue(device: Device) {
     const base =
@@ -97,20 +102,98 @@ export function createDeviceList() {
     renderChart(telemetryValues);
   }
 
-  function startTelemetry(device: Device) {
+  function parseMetric(payload: string) {
+    try {
+      const data = JSON.parse(payload) as Record<string, unknown>;
+      const candidate =
+        data.temperature ??
+        data.temp ??
+        data.value ??
+        data.humidity ??
+        data.battery;
+      if (typeof candidate === 'number') {
+        return candidate;
+      }
+      if (typeof candidate === 'string') {
+        const parsed = Number.parseFloat(candidate);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+      const numeric = Object.values(data).find((value) => typeof value === 'number');
+      return typeof numeric === 'number' ? numeric : null;
+    } catch {
+      const parsed = Number.parseFloat(payload);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+  }
+
+  function pushValue(value: number, device: Device) {
+    telemetryValues.push(value);
+    if (telemetryValues.length > maxPoints) {
+      telemetryValues.shift();
+    }
+    renderChart(telemetryValues);
+    detailValue.textContent = `현재 지표: ${value.toFixed(1)} · 상태: ${device.status.toUpperCase()}`;
+  }
+
+  function stopDeviceStream() {
+    mqttCleanup?.();
+    mqttCleanup = null;
+    if (offlineTimer !== null) {
+      clearInterval(offlineTimer);
+      offlineTimer = null;
+    }
+    lastMessageAt = null;
     stopTelemetry();
+  }
+
+  async function startDeviceStream(device: Device) {
+    stopDeviceStream();
+    const token = ++streamToken;
     telemetryValues = Array.from({ length: maxPoints }, () => buildNextValue(device));
     renderChart(telemetryValues);
-    telemetryTimer = window.setInterval(() => {
-      const activeDevice = selectedDevice ?? device;
-      const nextValue = buildNextValue(activeDevice);
-      telemetryValues.push(nextValue);
-      if (telemetryValues.length > maxPoints) {
-        telemetryValues.shift();
+    detailValue.textContent = `현재 지표: -- · 상태: ${device.status.toUpperCase()}`;
+    lastMessageAt = Date.now();
+
+    offlineTimer = window.setInterval(async () => {
+      if (!selectedDevice) {
+        return;
       }
-      renderChart(telemetryValues);
-      detailValue.textContent = `현재 지표: ${nextValue.toFixed(1)} · 상태: ${activeDevice.status.toUpperCase()}`;
-    }, 2000);
+      if (!lastMessageAt || Date.now() - lastMessageAt < 60_000) {
+        return;
+      }
+      if (selectedDevice.status === 'offline') {
+        return;
+      }
+      await deviceService.updateStatus(currentUserId, selectedDevice.id, 'offline');
+      selectedDevice = { ...selectedDevice, status: 'offline' };
+      detailValue.textContent = `현재 지표: -- · 상태: OFFLINE`;
+    }, 5000);
+
+    try {
+      const cleanup = await startMqttTopicStream(
+        device.topicPath,
+        async (message) => {
+          if (token !== streamToken) {
+            return;
+          }
+          lastMessageAt = Date.now();
+          const metric = parseMetric(message.payload);
+          const value = metric ?? buildNextValue(device);
+          if (selectedDevice?.status === 'offline') {
+            await deviceService.updateStatus(currentUserId, device.id, 'online');
+            selectedDevice = { ...device, status: 'online' };
+          }
+          pushValue(value, selectedDevice ?? device);
+        },
+      );
+      if (token !== streamToken) {
+        cleanup();
+        return;
+      }
+      mqttCleanup = cleanup;
+    } catch (error) {
+      console.warn('[device-monitoring] mqtt 구독 실패', error);
+    }
   }
 
   function updateDetailPanel(device: Device | null) {
@@ -118,13 +201,13 @@ export function createDeviceList() {
       detailMeta.textContent = '디바이스를 선택하면 현재 상태 기반의 실시간 그래프를 표시합니다.';
       detailValue.textContent = '';
       detailValue.classList.add('hidden');
-      stopTelemetry();
+      stopDeviceStream();
       return;
     }
     detailMeta.textContent = `토픽: ${device.topicPath} · 위치: ${device.location}`;
     detailValue.classList.remove('hidden');
     detailValue.textContent = `현재 지표: -- · 상태: ${device.status.toUpperCase()}`;
-    startTelemetry(device);
+    void startDeviceStream(device);
   }
 
   function setSelectedDevice(device: Device | null) {

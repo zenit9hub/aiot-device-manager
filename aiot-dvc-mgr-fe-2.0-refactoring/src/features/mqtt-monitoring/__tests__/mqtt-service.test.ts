@@ -6,7 +6,7 @@ describe('mqttService', () => {
     const messages: string[] = [];
     const cleanup = await startMqttMonitoring((message) => {
       messages.push(message.topic);
-    });
+    }, undefined, { forceSimulation: true });
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(messages.length).toBeGreaterThan(0);
     cleanup();
