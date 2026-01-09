@@ -39,6 +39,11 @@ export function createDeviceActions() {
     attrs: { type: 'text', placeholder: '위치 (예: 서울 마포)' },
   }) as HTMLInputElement;
 
+  const topicInput = createElement('input', {
+    className: 'w-full px-4 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-white',
+    attrs: { type: 'text', placeholder: 'MQTT 토픽 경로 (예: aiot/devices/+/status)' },
+  }) as HTMLInputElement;
+
   const statusSelect = createElement('select', {
     className: 'w-full px-4 py-2 bg-slate-900/60 border border-white/10 rounded-lg text-white',
   }) as HTMLSelectElement;
@@ -55,8 +60,9 @@ export function createDeviceActions() {
       const userId = authService.currentUser()?.uid ?? 'demo-user';
       const name = nameInput.value.trim();
       const location = locationInput.value.trim();
-      if (!name || !location) {
-        createMessage.textContent = '이름과 위치를 입력해야 합니다.';
+      const topicPath = topicInput.value.trim();
+      if (!name || !location || !topicPath) {
+        createMessage.textContent = '이름, 위치, 토픽 경로를 모두 입력해야 합니다.';
         return;
       }
       createMessage.textContent = '디바이스 등록 중...';
@@ -64,11 +70,13 @@ export function createDeviceActions() {
         name,
         location,
         status: statusSelect.value as Device['status'],
+        topicPath,
         lastSeen: '방금',
       });
       createMessage.textContent = '새 디바이스를 등록했습니다.';
       nameInput.value = '';
       locationInput.value = '';
+      topicInput.value = '';
     },
   });
 
@@ -104,7 +112,7 @@ export function createDeviceActions() {
   });
 
   formGrid.append(
-    createActionGroup([nameInput, locationInput, statusSelect, createButtonElement, createMessage]),
+    createActionGroup([nameInput, locationInput, topicInput, statusSelect, createButtonElement, createMessage]),
   );
   formGrid.append(createActionGroup([updateIdInput, updateStatusSelect, updateButtonElement, updateMessage]));
 

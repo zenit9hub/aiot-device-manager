@@ -18,12 +18,16 @@ export function createDeviceCard(device: Device) {
     className: 'text-sm text-slate-400',
     text: `마지막 연결: ${device.lastSeen} · 위치: ${device.location}`,
   });
+  const topic = createElement('p', {
+    className: 'text-xs text-slate-400',
+    text: `토픽: ${device.topicPath}`,
+  });
 
   const status = createElement('span', {
     className: `px-3 py-1 rounded-full text-xs font-semibold tracking-wide ${statusBadge[device.status]}`,
     text: device.status.toUpperCase(),
   });
 
-  card.append(title, meta, status);
+  card.append(title, meta, topic, status);
   return card;
 }

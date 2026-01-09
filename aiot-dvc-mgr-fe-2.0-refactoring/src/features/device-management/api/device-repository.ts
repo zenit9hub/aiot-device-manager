@@ -17,10 +17,12 @@ import type { Device } from '../../../entities/device/device';
 type DeviceListener = (devices: Device[]) => void;
 
 const fallbackDevices: Device[] = [
-  { id: 'device-1', name: 'Smart Meter #01', status: 'online', lastSeen: '1분 전', location: '서울 송파' },
-  { id: 'device-2', name: 'Temp Sensor #03', status: 'warning', lastSeen: '3분 전', location: '서울 강남' },
-  { id: 'device-3', name: 'Humidity Node #05', status: 'offline', lastSeen: '12분 전', location: '부산 해운대' },
+  { id: 'device-1', name: 'Smart Meter #01', status: 'online', lastSeen: '1분 전', location: '서울 송파', topicPath: 'aiot/devices/smartmeter01/status' },
+  { id: 'device-2', name: 'Temp Sensor #03', status: 'warning', lastSeen: '3분 전', location: '서울 강남', topicPath: 'aiot/devices/temp03/status' },
+  { id: 'device-3', name: 'Humidity Node #05', status: 'offline', lastSeen: '12분 전', location: '부산 해운대', topicPath: 'aiot/devices/humidity05/status' },
 ];
+
+const fallbackListeners = new Set<DeviceListener>();
 
 function mapSnapshot(snapshot: QueryDocumentSnapshot): Device {
   const data = snapshot.data();
@@ -30,12 +32,24 @@ function mapSnapshot(snapshot: QueryDocumentSnapshot): Device {
     status: (data?.status as Device['status']) ?? 'offline',
     lastSeen: data?.lastSeen ?? '알 수 없음',
     location: data?.location ?? '미지정',
+    topicPath: data?.topicPath ?? '미지정',
   };
 }
 
+function notifyFallback() {
+  const snapshot = fallbackDevices.slice();
+  fallbackListeners.forEach((listener) => listener(snapshot));
+}
+
 function useFallback(listener: DeviceListener) {
-  const timer = setTimeout(() => listener(fallbackDevices.slice()), 150);
-  return () => clearTimeout(timer);
+  fallbackListeners.add(listener);
+  const timer = setTimeout(() => {
+    listener(fallbackDevices.slice());
+  }, 0);
+  return () => {
+    clearTimeout(timer);
+    fallbackListeners.delete(listener);
+  };
 }
 
 export function subscribeToDevices(userId: string | null, listener: DeviceListener) {
@@ -73,7 +87,8 @@ export async function createDevice(userId: string, payload: Omit<Device, 'id'>) 
   const store: Firestore | null = getFirebaseStore();
   if (!store) {
     const id = `mock-${Date.now()}`;
-    fallbackDevices.unshift({ ...payload, id, lastSeen: payload.lastSeen ?? '방금' });
+    fallbackDevices.unshift({ ...payload, id, lastSeen: payload.lastSeen ?? '방금', topicPath: payload.topicPath });
+    notifyFallback();
     return fallbackDevices[0];
   }
 
@@ -94,6 +109,7 @@ export async function updateDeviceStatus(_userId: string, deviceId: string, stat
     if (target) {
       target.status = status;
       target.lastSeen = '방금';
+      notifyFallback();
     }
     return target ?? null;
   }
@@ -111,6 +127,7 @@ export async function deleteDevice(_userId: string, deviceId: string) {
     const index = fallbackDevices.findIndex((item) => item.id === deviceId);
     if (index >= 0) {
       fallbackDevices.splice(index, 1);
+      notifyFallback();
       return true;
     }
     return false;

@@ -1,3 +1,4 @@
+import type { User } from 'firebase/auth';
 import { authService } from '../../features/auth/model/auth-service';
 import { createButton } from '../../shared/ui/button';
 import { createElement } from '../../shared/lib/dom';
@@ -19,10 +20,11 @@ export function createHeader() {
   });
   const loginButton = createButton('로그인', { variant: 'ghost' });
 
-  let userEmail = authService.currentUser()?.email ?? null;
-  function refreshStatus() {
+  let userEmail: string | null = null;
+  function refreshStatus(user: User | null) {
+    userEmail = user?.email ?? null;
     if (userEmail) {
-      loginStatus.textContent = `로그인: ${userEmail}`;
+      loginStatus.textContent = `${userEmail}`;
       loginButton.textContent = '로그아웃';
       loginButton.classList.add('bg-red-500/20', 'border-red-400', 'text-red-100');
     } else {
@@ -35,25 +37,24 @@ export function createHeader() {
   loginButton.addEventListener('click', async (event) => {
     event.preventDefault();
     if (userEmail) {
+      loginStatus.textContent = '로그아웃 중...';
       await authService.logout();
-      userEmail = null;
-      refreshStatus();
-      window.dispatchEvent(new CustomEvent('auth-changed', { detail: { loggedIn: false } }));
       return;
     }
     loginStatus.textContent = '로그인 상태: 진행 중...';
     try {
-      const user = await authService.loginWithGoogle();
-      userEmail = user.email;
-      refreshStatus();
-      window.dispatchEvent(new CustomEvent('auth-changed', { detail: { loggedIn: !!userEmail } }));
+      await authService.loginWithGoogle();
     } catch (error) {
       loginStatus.textContent = '로그인 상태: 실패';
       console.warn(error);
     }
   });
 
-  refreshStatus();
+  refreshStatus(authService.currentUser());
+  authService.watchAuthState((user) => {
+    refreshStatus(user);
+    window.dispatchEvent(new CustomEvent('auth-changed', { detail: { loggedIn: Boolean(user) } }));
+  });
   controls.append(loginStatus, loginButton);
   header.append(brand, controls);
   return header;

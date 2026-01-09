@@ -6,4 +6,5 @@ export interface Device {
   status: DeviceStatus;
   lastSeen: string;
   location: string;
+  topicPath: string;
 }
