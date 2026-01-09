@@ -41,8 +41,6 @@ export function createHomePage() {
 
   introPanel.append(tileLabel, featureGrid);
 
-  const phaseTileDescription = phaseTile.querySelector('p');
-
   const beToggleRow = createElement('div', {
     className: 'flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-t border-slate-700/40 pt-4',
   });
@@ -103,11 +101,14 @@ export function createHomePage() {
   }
 
   function updatePhaseTileState(enabled: boolean) {
-    if (phaseTileDescription) {
-      phaseTileDescription.textContent = describePhase2(enabled);
+    const descriptionNode = phaseTile.querySelector('p');
+    if (descriptionNode) {
+      descriptionNode.textContent = describePhase2(enabled);
     }
     applyCardHighlight(phaseTile, enabled);
   }
+
+  updatePhaseTileState(false);
 
   return container;
 }
