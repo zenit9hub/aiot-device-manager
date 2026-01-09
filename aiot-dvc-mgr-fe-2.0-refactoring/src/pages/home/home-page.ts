@@ -58,7 +58,8 @@ export function createHomePage() {
     backendEnabled = enabled;
     beStatus.textContent = `BE 연동 상태: ${enabled ? 'On' : 'Off'}`;
     beToggleButton.textContent = enabled ? 'BE 연동 끄기' : 'BE 연동 켜기';
-    beToggleButton.classList.toggle('border-sky-400 text-sky-300', enabled);
+    beToggleButton.classList.toggle('border-sky-400', enabled);
+    beToggleButton.classList.toggle('text-sky-300', enabled);
     updatePhaseTileState(enabled);
     syncLock(authenticated);
   }
