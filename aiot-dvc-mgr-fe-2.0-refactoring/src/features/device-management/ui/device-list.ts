@@ -19,22 +19,32 @@ export function createDeviceList() {
 
   section.append(title, description, statusNote, gallery);
 
-  const userId = authService.currentUser()?.uid ?? 'demo-user';
-  statusNote.textContent = `실시간 구독: ${userId} (Firebase 설정 시 실제 devices 컬렉션을 구독합니다)`;
+  let unsubscribe: (() => void) | null = null;
 
-  deviceService.subscribe(userId, (devices) => {
-    gallery.innerHTML = '';
-    if (!devices.length) {
-      gallery.appendChild(
-        createElement('p', {
-          className: 'text-sm text-slate-400',
-          text: '감지된 디바이스가 없습니다. Firestore devices 컬렉션을 확인해 주세요.',
-        }),
-      );
-      return;
-    }
+  function subscribeForUser(userId: string | null) {
+    const resolvedUserId = userId ?? 'demo-user';
+    statusNote.textContent = `실시간 구독: ${resolvedUserId} (Firebase 설정 시 실제 devices 컬렉션을 구독합니다)`;
+    unsubscribe?.();
+    unsubscribe = deviceService.subscribe(resolvedUserId, (devices) => {
+      gallery.innerHTML = '';
+      if (!devices.length) {
+        gallery.appendChild(
+          createElement('p', {
+            className: 'text-sm text-slate-400',
+            text: '감지된 디바이스가 없습니다. Firestore devices 컬렉션을 확인해 주세요.',
+          }),
+        );
+        return;
+      }
 
-    devices.forEach((device) => gallery.appendChild(createDeviceCard(device)));
+      devices.forEach((device) => gallery.appendChild(createDeviceCard(device)));
+    });
+  }
+
+  subscribeForUser(authService.currentUser()?.uid ?? null);
+
+  window.addEventListener('auth-changed', () => {
+    subscribeForUser(authService.currentUser()?.uid ?? null);
   });
 
   return section;

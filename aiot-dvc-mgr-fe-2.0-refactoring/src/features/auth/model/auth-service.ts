@@ -1,6 +1,7 @@
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   setPersistence,
   browserLocalPersistence,
@@ -19,15 +20,30 @@ async function ensurePersistence(auth: Auth) {
   }
 }
 
+const popupFallbackCodes = new Set([
+  'auth/popup-blocked',
+  'auth/popup-closed-by-user',
+  'auth/operation-not-supported-in-this-environment',
+]);
+
 export const authService = {
-  async loginWithGoogle(): Promise<User> {
+  async loginWithGoogle(): Promise<User | null> {
     const auth = getFirebaseAuth();
     if (!auth) {
       throw new Error('Firebase 인증이 구성되어 있지 않습니다.');
     }
     await ensurePersistence(auth);
-    const result = await signInWithPopup(auth, provider);
-    return result.user;
+    try {
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    } catch (error) {
+      const code = (error as { code?: string }).code;
+      if (code && popupFallbackCodes.has(code)) {
+        await signInWithRedirect(auth, provider);
+        return null;
+      }
+      throw error;
+    }
   },
 
   async logout() {

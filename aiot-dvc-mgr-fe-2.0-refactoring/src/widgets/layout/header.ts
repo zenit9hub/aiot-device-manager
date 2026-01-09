@@ -43,9 +43,14 @@ export function createHeader() {
     }
     loginStatus.textContent = '로그인 상태: 진행 중...';
     try {
-      await authService.loginWithGoogle();
+      const user = await authService.loginWithGoogle();
+      if (!user) {
+        loginStatus.textContent = '로그인 상태: 리다이렉트 진행 중...';
+      }
     } catch (error) {
       loginStatus.textContent = '로그인 상태: 실패';
+      const code = (error as { code?: string }).code ?? 'unknown';
+      window.dispatchEvent(new CustomEvent('auth-error', { detail: { code } }));
       console.warn(error);
     }
   });

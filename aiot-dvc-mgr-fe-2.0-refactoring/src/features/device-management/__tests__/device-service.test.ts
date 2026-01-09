@@ -21,6 +21,7 @@ describe('deviceService', () => {
       name: 'Test Sensor',
       location: '테스트랩',
       status: 'online',
+      topicPath: 'aiot/devices/test-sensor/status',
       lastSeen: '방금',
     });
 

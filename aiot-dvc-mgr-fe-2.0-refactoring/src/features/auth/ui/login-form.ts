@@ -26,9 +26,8 @@ export function createLoginForm() {
         event.preventDefault();
         status.textContent = '상태: 로그인 시도 중...';
         try {
-          await authService.loginWithGoogle();
-          status.textContent = '상태: 로그인 성공';
-          window.dispatchEvent(new CustomEvent('auth-changed', { detail: { loggedIn: true } }));
+          const user = await authService.loginWithGoogle();
+          status.textContent = user ? '상태: 로그인 성공' : '상태: 리다이렉트 진행 중...';
         } catch (error) {
           status.textContent = '상태: Firebase 설정 확인 필요';
           console.warn(error);

@@ -8,7 +8,6 @@ import {
   query,
   serverTimestamp,
   updateDoc,
-  where,
 } from 'firebase/firestore';
 import type { Firestore, QueryDocumentSnapshot } from 'firebase/firestore';
 import { getFirebaseStore } from '../../../app/providers/firebase-provider';
@@ -16,13 +15,14 @@ import type { Device } from '../../../entities/device/device';
 
 type DeviceListener = (devices: Device[]) => void;
 
-const fallbackDevices: Device[] = [
-  { id: 'device-1', name: 'Smart Meter #01', status: 'online', lastSeen: '1분 전', location: '서울 송파', topicPath: 'aiot/devices/smartmeter01/status' },
-  { id: 'device-2', name: 'Temp Sensor #03', status: 'warning', lastSeen: '3분 전', location: '서울 강남', topicPath: 'aiot/devices/temp03/status' },
-  { id: 'device-3', name: 'Humidity Node #05', status: 'offline', lastSeen: '12분 전', location: '부산 해운대', topicPath: 'aiot/devices/humidity05/status' },
+const baseFallbackDevices: Omit<Device, 'id'>[] = [
+  { name: 'Smart Meter #01', status: 'online', lastSeen: '1분 전', location: '서울 송파', topicPath: 'aiot/devices/smartmeter01/status' },
+  { name: 'Temp Sensor #03', status: 'warning', lastSeen: '3분 전', location: '서울 강남', topicPath: 'aiot/devices/temp03/status' },
+  { name: 'Humidity Node #05', status: 'offline', lastSeen: '12분 전', location: '부산 해운대', topicPath: 'aiot/devices/humidity05/status' },
 ];
 
-const fallbackListeners = new Set<DeviceListener>();
+const fallbackDevicesByUser = new Map<string, Device[]>();
+const fallbackListenersByUser = new Map<string, Set<DeviceListener>>();
 
 function mapSnapshot(snapshot: QueryDocumentSnapshot): Device {
   const data = snapshot.data();
@@ -36,33 +36,60 @@ function mapSnapshot(snapshot: QueryDocumentSnapshot): Device {
   };
 }
 
-function notifyFallback() {
-  const snapshot = fallbackDevices.slice();
-  fallbackListeners.forEach((listener) => listener(snapshot));
+function getFallbackDevices(userId: string) {
+  if (!fallbackDevicesByUser.has(userId)) {
+    const clone = baseFallbackDevices.map((device, index) => ({
+      ...device,
+      id: `${device.name.replace(/\s+/g, '-').toLowerCase()}-${userId}-${index}`,
+    }));
+    fallbackDevicesByUser.set(userId, clone);
+  }
+  return fallbackDevicesByUser.get(userId)!;
 }
 
-function useFallback(listener: DeviceListener) {
-  fallbackListeners.add(listener);
+function getFallbackListeners(userId: string) {
+  if (!fallbackListenersByUser.has(userId)) {
+    fallbackListenersByUser.set(userId, new Set());
+  }
+  return fallbackListenersByUser.get(userId)!;
+}
+
+function notifyFallback(userId: string) {
+  const snapshot = getFallbackDevices(userId).slice();
+  getFallbackListeners(userId).forEach((listener) => listener(snapshot));
+}
+
+function useFallback(userId: string, listener: DeviceListener) {
+  const listeners = getFallbackListeners(userId);
+  listeners.add(listener);
   const timer = setTimeout(() => {
-    listener(fallbackDevices.slice());
+    listener(getFallbackDevices(userId).slice());
   }, 0);
   return () => {
     clearTimeout(timer);
-    fallbackListeners.delete(listener);
+    listeners.delete(listener);
   };
 }
 
+const ROOT_USER_DATA = 'users';
+
+function resolveUser(userId: string | null) {
+  return userId ?? 'demo-user';
+}
+
+function resolveUserDevicesCollection(store: Firestore, userId: string) {
+  return collection(store, ROOT_USER_DATA, userId, 'devices');
+}
+
 export function subscribeToDevices(userId: string | null, listener: DeviceListener) {
+  const resolvedUserId = resolveUser(userId);
   const store = getFirebaseStore();
-  if (!store || !userId) {
-    return useFallback(listener);
+  if (!store) {
+    return useFallback(resolvedUserId, listener);
   }
 
-  const devicesQuery = query(
-    collection(store, 'devices'),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc'),
-  );
+  const userDevices = resolveUserDevicesCollection(store, resolvedUserId);
+  const devicesQuery = query(userDevices, orderBy('createdAt', 'desc'));
 
   let fallbackCleanup = () => {};
 
@@ -73,7 +100,7 @@ export function subscribeToDevices(userId: string | null, listener: DeviceListen
     },
     (error) => {
       console.warn('[device-repository] Firestore subscription failed', error);
-      fallbackCleanup = useFallback(listener);
+      fallbackCleanup = useFallback(resolvedUserId, listener);
     },
   );
 
@@ -84,16 +111,27 @@ export function subscribeToDevices(userId: string | null, listener: DeviceListen
 }
 
 export async function createDevice(userId: string, payload: Omit<Device, 'id'>) {
+  const resolvedUserId = resolveUser(userId);
   const store: Firestore | null = getFirebaseStore();
   if (!store) {
+    const devices = getFallbackDevices(resolvedUserId);
     const id = `mock-${Date.now()}`;
-    fallbackDevices.unshift({ ...payload, id, lastSeen: payload.lastSeen ?? '방금', topicPath: payload.topicPath });
-    notifyFallback();
-    return fallbackDevices[0];
+    const newDevice: Device = {
+      id,
+      name: payload.name,
+      location: payload.location,
+      status: payload.status,
+      topicPath: payload.topicPath ?? `aiot/devices/${id}/status`,
+      lastSeen: payload.lastSeen ?? '방금',
+    };
+    devices.unshift(newDevice);
+    notifyFallback(resolvedUserId);
+    return newDevice;
   }
 
-  const docRef = await addDoc(collection(store, 'devices'), {
-    userId,
+  const userDevices = resolveUserDevicesCollection(store, resolvedUserId);
+  const docRef = await addDoc(userDevices, {
+    userId: resolvedUserId,
     ...payload,
     createdAt: serverTimestamp(),
     lastSeen: payload.lastSeen ?? new Date().toISOString(),
@@ -103,18 +141,21 @@ export async function createDevice(userId: string, payload: Omit<Device, 'id'>) 
 }
 
 export async function updateDeviceStatus(_userId: string, deviceId: string, status: Device['status']) {
+  const resolvedUserId = resolveUser(_userId);
   const store: Firestore | null = getFirebaseStore();
   if (!store) {
-    const target = fallbackDevices.find((item) => item.id === deviceId);
+    const devices = getFallbackDevices(resolvedUserId);
+    const target = devices.find((item) => item.id === deviceId);
     if (target) {
       target.status = status;
       target.lastSeen = '방금';
-      notifyFallback();
+      notifyFallback(resolvedUserId);
     }
     return target ?? null;
   }
 
-  await updateDoc(doc(store, 'devices', deviceId), {
+  const userDevices = resolveUserDevicesCollection(store, resolvedUserId);
+  await updateDoc(doc(userDevices, deviceId), {
     status,
     lastSeen: new Date().toISOString(),
   });
@@ -122,17 +163,20 @@ export async function updateDeviceStatus(_userId: string, deviceId: string, stat
 }
 
 export async function deleteDevice(_userId: string, deviceId: string) {
+  const resolvedUserId = resolveUser(_userId);
   const store: Firestore | null = getFirebaseStore();
   if (!store) {
-    const index = fallbackDevices.findIndex((item) => item.id === deviceId);
+    const devices = getFallbackDevices(resolvedUserId);
+    const index = devices.findIndex((item) => item.id === deviceId);
     if (index >= 0) {
-      fallbackDevices.splice(index, 1);
-      notifyFallback();
+      devices.splice(index, 1);
+      notifyFallback(resolvedUserId);
       return true;
     }
     return false;
   }
 
-  await deleteDoc(doc(store, 'devices', deviceId));
+  const userDevices = resolveUserDevicesCollection(store, resolvedUserId);
+  await deleteDoc(doc(userDevices, deviceId));
   return true;
 }

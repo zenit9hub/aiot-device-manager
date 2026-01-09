@@ -1,9 +1,12 @@
-import { createElement } from '../../shared/lib/dom';
-import { createCard, applyCardHighlight } from '../../shared/ui/card';
-import { createDeviceList } from '../../features/device-management/ui/device-list';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { getFirebaseStore } from '../../app/providers/firebase-provider';
 import { createDeviceActions } from '../../features/device-management/ui/device-actions';
+import { createDeviceList } from '../../features/device-management/ui/device-list';
 import { createMqttPanel } from '../../features/mqtt-monitoring/ui/mqtt-panel';
 import { authService } from '../../features/auth/model/auth-service';
+import { createElement } from '../../shared/lib/dom';
+import { firebaseConfig } from '../../shared/config/firebase-config';
+import { applyCardHighlight, createCard } from '../../shared/ui/card';
 
 /** Render the main dashboard for the AIoT Dev Mgr learning experience. */
 export function createHomePage() {
@@ -25,6 +28,29 @@ export function createHomePage() {
     text: '실시간 디바이스 보기와 파이어베이스 기반 인증을 통해 AIoT Dev Mgr의 핵심 흐름을 빠르게 확인하고, 이후 백엔드 통합으로 가치를 고도화하는 순서로 설계되어 있습니다.',
   });
   introPanel.append(heroTitle, heroSubtitle, heroCopy);
+
+  const checklistTitle = createElement('p', {
+    className: 'text-xs uppercase tracking-[0.3em] text-slate-500',
+    text: '실습 필수 체크리스트',
+  });
+  const checklist = createElement('div', { className: 'space-y-2' });
+
+  function createChecklistItem(label: string) {
+    const row = createElement('label', { className: 'flex items-start gap-3 text-sm text-slate-300' });
+    const checkbox = createElement('input', {
+      className: 'mt-0.5 h-4 w-4 rounded border-white/20 bg-slate-900/60 accent-sky-400',
+      attrs: { type: 'checkbox', disabled: true },
+    }) as HTMLInputElement;
+    const text = createElement('span', { text: label });
+    row.append(checkbox, text);
+    return { row, checkbox };
+  }
+
+  const envChecklist = createChecklistItem('.env 설정으로 Firebase 연동 정보가 주입되었는가');
+  const domainChecklist = createChecklistItem('Firebase Auth 승인 도메인(로컬/배포)이 등록되었는가');
+  const firestoreChecklist = createChecklistItem('Firestore 읽기/쓰기 권한이 정상 동작하는가');
+  checklist.append(envChecklist.row, domainChecklist.row, firestoreChecklist.row);
+  introPanel.append(checklistTitle, checklist);
 
   const tileLabel = createElement('p', {
     className: 'text-sm uppercase tracking-[0.2em] text-slate-500',
@@ -89,6 +115,71 @@ export function createHomePage() {
     const detail = (event as CustomEvent<{ loggedIn: boolean }>).detail;
     authenticated = Boolean(detail?.loggedIn);
     syncLock(authenticated);
+  });
+
+  function setChecklist(item: ReturnType<typeof createChecklistItem>, checked: boolean) {
+    item.checkbox.checked = checked;
+    item.row.classList.toggle('text-emerald-200', checked);
+    item.row.classList.toggle('text-slate-300', !checked);
+  }
+
+  const envReady = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.authDomain);
+  setChecklist(envChecklist, envReady);
+  setChecklist(domainChecklist, false);
+  setChecklist(firestoreChecklist, false);
+
+  let lastFirestoreCheckUser: string | null = null;
+  let firestoreCheckInFlight = false;
+
+  async function verifyFirestoreAccess(userId: string) {
+    if (firestoreCheckInFlight) {
+      return;
+    }
+    const store = getFirebaseStore();
+    if (!store) {
+      setChecklist(firestoreChecklist, false);
+      return;
+    }
+    firestoreCheckInFlight = true;
+    try {
+      const userDoc = doc(store, 'users', userId);
+      await setDoc(userDoc, { lastLoginAt: serverTimestamp() }, { merge: true });
+      const snapshot = await getDoc(userDoc);
+      setChecklist(firestoreChecklist, snapshot.exists());
+    } catch (error) {
+      console.warn('[checklist] Firestore 권한 확인 실패', error);
+      setChecklist(firestoreChecklist, false);
+    } finally {
+      firestoreCheckInFlight = false;
+    }
+  }
+
+  function updateAuthChecklist() {
+    const user = authService.currentUser();
+    setChecklist(domainChecklist, Boolean(user));
+    if (!user) {
+      setChecklist(firestoreChecklist, false);
+      lastFirestoreCheckUser = null;
+      return;
+    }
+    if (lastFirestoreCheckUser === user.uid) {
+      return;
+    }
+    lastFirestoreCheckUser = user.uid;
+    verifyFirestoreAccess(user.uid);
+  }
+
+  updateAuthChecklist();
+
+  window.addEventListener('auth-changed', () => {
+    updateAuthChecklist();
+  });
+
+  window.addEventListener('auth-error', (event) => {
+    const detail = (event as CustomEvent<{ code?: string }>).detail;
+    if (detail?.code === 'auth/unauthorized-domain') {
+      setChecklist(domainChecklist, false);
+    }
   });
 
   container.append(introPanel, deviceList, deviceActions, mqttPanel);
