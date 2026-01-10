@@ -21,6 +21,12 @@ export function createLoginForm() {
     text: '상태: 준비 완료',
   });
 
+  function emitAuthError(error: unknown) {
+    const code = (error as { code?: string })?.code;
+    window.dispatchEvent(new CustomEvent('auth-error', { detail: { code } }));
+    console.warn(error);
+  }
+
   const form = createElement('form', { className: 'space-y-3' });
   const emailInput = createElement('input', {
     className:
@@ -62,7 +68,7 @@ export function createLoginForm() {
       status.textContent = '상태: 로그인 성공';
     } catch (error) {
       status.textContent = '상태: 이메일 인증 실패 또는 정보 확인 필요';
-      console.warn(error);
+      emitAuthError(error);
     }
   });
 
@@ -80,7 +86,7 @@ export function createLoginForm() {
         status.textContent = user ? '상태: 로그인 성공' : '상태: 리다이렉트 진행 중...';
       } catch (error) {
         status.textContent = '상태: Firebase 설정 확인 필요';
-        console.warn(error);
+        emitAuthError(error);
       }
     },
   });

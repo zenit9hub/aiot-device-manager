@@ -2,6 +2,7 @@ import type { User } from 'firebase/auth';
 import { authService } from '../../features/auth/model/auth-service';
 import { createButton } from '../../shared/ui/button';
 import { createElement } from '../../shared/lib/dom';
+import { createLoginForm } from '../../features/auth/ui/login-form';
 
 export function createHeader() {
   const header = createElement('header', {
@@ -19,6 +20,57 @@ export function createHeader() {
     text: '로그인 상태: 미로그인',
   });
   const loginButton = createButton('로그인', { variant: 'ghost' });
+
+  let loginModal: HTMLElement | null = null;
+  let authChangeListener: ((event: Event) => void) | null = null;
+
+  function closeLoginModal() {
+    if (!loginModal) {
+      return;
+    }
+    loginModal.remove();
+    loginModal = null;
+    if (authChangeListener) {
+      window.removeEventListener('auth-changed', authChangeListener);
+      authChangeListener = null;
+    }
+  }
+
+  function openLoginModal() {
+    if (loginModal) {
+      return;
+    }
+    const overlay = createElement('div', {
+      className:
+        'fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm',
+    });
+    const dialog = createElement('div', {
+      className:
+        'w-full max-w-md space-y-4 rounded-2xl border border-slate-700/80 bg-slate-900/80 p-6 shadow-2xl',
+    });
+    const loginForm = createLoginForm();
+    const closeButton = createButton('창 닫기', {
+      variant: 'ghost',
+      onClick(event) {
+        event.preventDefault();
+        closeLoginModal();
+      },
+    });
+    closeButton.classList.add('w-full');
+    dialog.append(loginForm, closeButton);
+    overlay.append(dialog);
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        closeLoginModal();
+      }
+    });
+    document.body.appendChild(overlay);
+    loginModal = overlay;
+    authChangeListener = () => {
+      closeLoginModal();
+    };
+    window.addEventListener('auth-changed', authChangeListener);
+  }
 
   let userEmail: string | null = null;
   function refreshStatus(user: User | null) {
@@ -41,18 +93,8 @@ export function createHeader() {
       await authService.logout();
       return;
     }
-    loginStatus.textContent = '로그인 상태: 진행 중...';
-    try {
-      const user = await authService.loginWithGoogle();
-      if (!user) {
-        loginStatus.textContent = '로그인 상태: 리다이렉트 진행 중...';
-      }
-    } catch (error) {
-      loginStatus.textContent = '로그인 상태: 실패';
-      const code = (error as { code?: string }).code ?? 'unknown';
-      window.dispatchEvent(new CustomEvent('auth-error', { detail: { code } }));
-      console.warn(error);
-    }
+    loginStatus.textContent = '로그인 상태: 로그인 창 열기...';
+    openLoginModal();
   });
 
   refreshStatus(authService.currentUser());
