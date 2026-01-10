@@ -37,8 +37,16 @@ export function createDeviceList() {
     text: '샘플은 2초 간격으로 갱신됩니다.',
   });
 
+  const chartLayout = createElement('div', { className: 'flex items-stretch gap-3' });
+  const chartAxis = createElement('div', {
+    className: 'flex w-16 flex-col justify-between text-xs text-slate-400',
+  });
+  const chartMaxLabel = createElement('span', { text: '최고: --' });
+  const chartMinLabel = createElement('span', { text: '최저: --' });
+  chartAxis.append(chartMaxLabel, chartMinLabel);
+  chartAxis.style.height = '8rem';
   const chartWrapper = createElement('div', {
-    className: 'relative h-32 w-full rounded-xl border border-white/10 bg-slate-950/40',
+    className: 'relative h-32 flex-1 rounded-xl border border-white/10 bg-slate-950/40',
   });
   const chartSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   chartSvg.setAttribute('viewBox', '0 0 100 40');
@@ -53,8 +61,8 @@ export function createDeviceList() {
   chartLine.setAttribute('stroke-linejoin', 'round');
   chartSvg.append(chartLine);
   chartWrapper.append(chartSvg);
-
-  detailPanel.append(detailTitle, detailMeta, detailValue, chartWrapper, detailHint);
+  chartLayout.append(chartAxis, chartWrapper);
+  detailPanel.append(detailTitle, detailMeta, detailValue, chartLayout, detailHint);
   section.append(title, description, statusNote, gallery, detailPanel);
 
   let unsubscribe: (() => void) | null = null;
@@ -78,15 +86,29 @@ export function createDeviceList() {
     return Math.max(5, Math.min(100, base + jitter));
   }
 
+  function updateScaleLabels(maxValue: number | null, minValue: number | null) {
+    chartMaxLabel.textContent = `최고: ${maxValue === null ? '--' : maxValue.toFixed(1)}`;
+    chartMinLabel.textContent = `최저: ${minValue === null ? '--' : minValue.toFixed(1)}`;
+  }
+
   function renderChart(values: number[]) {
     if (!values.length) {
       chartLine.setAttribute('points', '');
+      updateScaleLabels(null, null);
       return;
     }
+    const maxValue = Math.max(...values);
+    const minValue = Math.min(...values);
+    const range = maxValue - minValue || 1;
+    const topMargin = 4;
+    const drawingHeight = 40 - topMargin * 2;
+    updateScaleLabels(maxValue, minValue);
     const points = values
       .map((value, index) => {
         const x = (index / Math.max(values.length - 1, 1)) * 100;
-        const y = 40 - (value / 100) * 40;
+        const normalized =
+          range === 0 ? 0.5 : (value - minValue) / range;
+        const y = topMargin + (1 - normalized) * drawingHeight;
         return `${x},${y}`;
       })
       .join(' ');
