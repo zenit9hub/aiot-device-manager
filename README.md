@@ -1,58 +1,28 @@
 # AIoT Device Manager 학습 리포지토리
 
-두 개의 예제 프로젝트를 통해 **Firebase 기반 MVP**부터 **커스텀 백엔드 연동**까지 단계별로 경험하며, IoT 서비스가 성장할 때 필요한 기술 의사결정을 연습할 수 있습니다.
+이 프로젝트는 **Phase 1(Serverless MVP)**에서 외부 서비스(Firebase, Amplify, MQTT)를 조합해 **백엔드 없이도 배포/운영 가능한 MVP1**을 완성하는 과정을 다룹니다.  
+이후 **Phase 2(Backend 연동)**로 확장하여 실시간 데이터를 **SQL 기반 시계열 저장 및 분석**까지 연결하는 **실용적 성장 트랙(MVP1 → MVP2/3)**을 학습하도록 설계되어 있습니다.
 
-## 폴더 구성
-- `aiot-device-manager-fe-working/` – Vite + Firebase를 활용한 프론트엔드 실습
-- `aiot-device-manager-be-working/` – Express + MySQL + Firebase Admin 기반 백엔드 실습
-- `CLOUD_DEPLOYMENT_GUIDE.md` – 과정 전체의 배포 및 확장 전략 정리
+## 프로젝트 구성
+- `aiot-dvc-mgr-fe-2.0-refactoring/`  
+  Phase 1 프론트엔드 레퍼런스. Vite + Tailwind + Firebase + MQTT로 빠른 실습이 가능하며, 배포 가능한 MVP 형태를 제공합니다.
+- `docs/`  
+  아키텍처/리팩토링/배포 가이드 문서 모음.
 
-## 핵심 학습 포인트
-- **빠른 MVP 구성**: Firebase Auth · Firestore · Hosting을 활용해 서버 없이도 실시간 IoT 관리 화면을 만들 수 있습니다.
-- **확장형 아키텍처 체험**: Firebase ID 토큰을 커스텀 백엔드에서 검증하고, MySQL로 영구 저장하는 과정을 학습합니다.
-- **운영 관점 점검**: Docker Compose, 환경 변수 템플릿, OpenAPI 문서를 통해 실무적인 배포·운영 포인트를 익힙니다.
+## 학습 포인트
+- **MVP1 완성**: Auth/DB/Hosting을 상용 서비스로 대체해 빠르게 제품화 경험
+- **확장 설계**: Phase 2에서 백엔드 연동 → SQL 저장 → 분석 파이프라인으로 확장하는 구조 이해
+- **실전 중심**: 실제 배포/운영 수준의 구성으로 문서 기반 재현 가능
 
-## 프로젝트 하이라이트
-### 프론트엔드 (`aiot-device-manager-fe-working/`)
-- Vite + Tailwind + Firebase 구성
-- 이메일/Google 로그인, 실시간 Firestore 동기화
-- MQTT 메시지 구독 및 차트 시각화
-- “BE 연동하기” 버튼으로 백엔드 Health 체크 후 엔드포인트 저장
-- Firebase ID 토큰을 2~10분 범위에서 자동 캐싱하여 API 호출 효율화
-
-### 백엔드 (`aiot-device-manager-be-working/`)
-- Express + TypeScript + Firebase Admin SDK
-- `/api/sensors/data` 단일 엔드포인트로 센서 데이터 수집
-- MySQL 스키마 및 Docker Compose 제공
-- 사용자/디바이스/Sensor Reading append-only 저장 구조
-- OpenAPI 명세와 로깅, 토큰 검증 미들웨어 포함
-
-## 빠른 시작
-### 1. 프론트엔드
+## 빠른 시작 (Phase 1)
 ```bash
-cd aiot-device-manager-fe-working
+cd aiot-dvc-mgr-fe-2.0-refactoring
 npm install
-cp .env.example .env   # Firebase 웹 앱 설정 입력
+cp .env.example .env
 npm run dev
 ```
-필수 Firebase 콘솔 설정(인증 활성화, 허용 도메인 추가 등)은 하위 폴더 `README.md`를 참고하세요.
 
-### 2. 백엔드
-```bash
-cd aiot-device-manager-be-working
-npm install
-cp .env.example .env   # Firebase Admin & MySQL 정보 입력
-docker compose up -d   # MySQL 실행
-npm run dev
-```
-`.env`에는 Firebase 서비스 계정 이메일·프라이빗키와 DB 접속 정보를 등록해야 하며, 자세한 설명은 하위 폴더 `README.md`에 있습니다.
-
-## 권장 실습 시나리오
-1. **MVP 완성** – 프론트엔드만으로 디바이스 등록·MQTT 모니터링 구현
-2. **백엔드 연동** – “BE 연동하기” 버튼으로 로컬 백엔드 `/health` 검증 후 엔드포인트 저장, 센서 데이터 DB 적재 확인
-3. **심화 확장** – 추가 API, 데이터 분석, 알림 처리 등을 자유롭게 설계해보며 `CLOUD_DEPLOYMENT_GUIDE.md`를 참고해 배포 시나리오까지 검토
-
-## 참고 자료
-- `CLOUD_DEPLOYMENT_GUIDE.md`: 전체 아키텍처, 배포 전략, 심화 학습 트랙
-- 각 하위 프로젝트의 `README.md`: 환경 변수, 실행 방법, 구조 설명
-- 필요에 따라 두 프로젝트를 독립적으로 실행하거나 동일 Firebase 프로젝트로 묶어 통합 실습을 진행할 수 있습니다.
+## 문서 안내
+- `docs/(1.3) 📌 2.0 아키텍처 종합.md` : 전체 설계 개요
+- `docs/📌 REFACTORING_WORKFLOW.md` : 리팩토링 흐름 및 체크리스트
+- `docs/앰플리파이연동가이드.md` : Amplify 배포 가이드
