@@ -69,6 +69,20 @@ export const authService = {
     const auth = getFirebaseAuth();
     return auth?.currentUser ?? null;
   },
+
+  async getIdToken(forceRefresh = false): Promise<string | null> {
+    const auth = getFirebaseAuth();
+    const user = auth?.currentUser;
+    if (!user) {
+      return null;
+    }
+    try {
+      return await user.getIdToken(forceRefresh);
+    } catch (error) {
+      console.warn('[auth] token 발급 실패', error);
+      return null;
+    }
+  },
   watchAuthState(callback: (user: User | null) => void) {
     const auth = getFirebaseAuth();
     if (!auth) {

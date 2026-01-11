@@ -5,6 +5,7 @@ import { createDeviceActions } from '../../features/device-management/ui/device-
 import { createDeviceList } from '../../features/device-management/ui/device-list';
 import { createMqttPanel } from '../../features/mqtt-monitoring/ui/mqtt-panel';
 import { authService } from '../../features/auth/model/auth-service';
+import { backendService } from '../../features/backend/model/backend-service';
 import { createElement } from '../../shared/lib/dom';
 import { firebaseConfig } from '../../shared/config/firebase-config';
 import { applyCardHighlight, createCard } from '../../shared/ui/card';
@@ -80,6 +81,7 @@ export function createHomePage() {
   });
 
   let backendEnabled = false;
+  let backendCheckInFlight = false;
   function updateBackendStatus(enabled: boolean) {
     backendEnabled = enabled;
     beStatus.textContent = `BE 연동 상태: ${enabled ? 'On' : 'Off'}`;
@@ -88,10 +90,49 @@ export function createHomePage() {
     beToggleButton.classList.toggle('text-sky-300', enabled);
     updatePhaseTileState(enabled);
     syncLock(authenticated);
+    window.dispatchEvent(new CustomEvent('backend-toggle', { detail: { enabled } }));
+  }
+
+  async function attemptEnableBackend() {
+    if (backendCheckInFlight) {
+      return;
+    }
+    if (!authenticated) {
+      beStatus.textContent = 'BE 연동 상태: 로그인 필요';
+      return;
+    }
+    backendCheckInFlight = true;
+    beToggleButton.disabled = true;
+    beStatus.textContent = 'BE 연동 상태: 확인 중...';
+    const token = await authService.getIdToken();
+    if (!token) {
+      beStatus.textContent = 'BE 연동 상태: 토큰 없음';
+      beToggleButton.disabled = false;
+      backendCheckInFlight = false;
+      return;
+    }
+    try {
+      const ok = await backendService.checkHealth(token);
+      if (!ok) {
+        throw new Error('Health check failed');
+      }
+      updateBackendStatus(true);
+    } catch (error) {
+      console.warn('[backend] health check failed', error);
+      updateBackendStatus(false);
+      beStatus.textContent = 'BE 연동 상태: 연결 실패';
+    } finally {
+      beToggleButton.disabled = false;
+      backendCheckInFlight = false;
+    }
   }
 
   beToggleButton.addEventListener('click', () => {
-    updateBackendStatus(!backendEnabled);
+    if (backendEnabled) {
+      updateBackendStatus(false);
+      return;
+    }
+    void attemptEnableBackend();
   });
 
   beToggleRow.append(beStatus, beToggleButton);
@@ -116,6 +157,9 @@ export function createHomePage() {
     const detail = (event as CustomEvent<{ loggedIn: boolean }>).detail;
     authenticated = Boolean(detail?.loggedIn);
     syncLock(authenticated);
+    if (!authenticated && backendEnabled) {
+      updateBackendStatus(false);
+    }
   });
 
   function setChecklist(item: ReturnType<typeof createChecklistItem>, checked: boolean) {

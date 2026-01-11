@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: aiot-device-manager-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootsecret
+      MYSQL_DATABASE: aiot_device_manager
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: appsecret
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+volumes:
+  mysql_data:

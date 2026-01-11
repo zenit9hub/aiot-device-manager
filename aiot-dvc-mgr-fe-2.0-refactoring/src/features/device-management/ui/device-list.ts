@@ -5,6 +5,7 @@ import type { Device } from '../../../entities/device/device';
 import { deviceService } from '../model/device-service';
 import { authService } from '../../auth/model/auth-service';
 import { startMqttTopicStream } from '../../mqtt-monitoring/model/mqtt-service';
+import { backendService } from '../../backend/model/backend-service';
 
 export function createDeviceList() {
   const section = createElement('section', {
@@ -76,6 +77,12 @@ export function createDeviceList() {
   let lastMessageAt: number | null = null;
   let offlineTimer: number | null = null;
   let streamToken = 0;
+  let backendEnabled = false;
+
+  window.addEventListener('backend-toggle', (event) => {
+    const detail = (event as CustomEvent<{ enabled: boolean }>).detail;
+    backendEnabled = Boolean(detail?.enabled);
+  });
 
   function buildNextValue(device: Device) {
     const base =
@@ -206,6 +213,21 @@ export function createDeviceList() {
             selectedDevice = { ...device, status: 'online' };
           }
           pushValue(value, selectedDevice ?? device);
+          if (backendEnabled) {
+            const idToken = await authService.getIdToken();
+            if (idToken) {
+              const sensorPayload: Record<string, unknown> = { raw: message.payload };
+              if (metric !== null) {
+                sensorPayload.value = metric;
+              }
+              void backendService.sendSensorReading(idToken, {
+                deviceId: device.id,
+                deviceName: device.name,
+                recordedAt: new Date().toISOString(),
+                payload: sensorPayload,
+              });
+            }
+          }
         },
       );
       if (token !== streamToken) {
