@@ -23,6 +23,7 @@ npm run dev
 ```
 
 ## 문서 안내
-- `docs/(1.3) 📌 2.0 아키텍처 종합.md` : 전체 설계 개요
-- `docs/📌 REFACTORING_WORKFLOW.md` : 리팩토링 흐름 및 체크리스트
+- `docs/강의 보조 자료/(1.3) 📌 2.0 아키텍처 종합.md` : 전체 설계 개요
+- `docs/강의 보조 자료/2.3_REFACTORING_WORKFLOW.md` : 리팩토링 흐름 및 체크리스트
 - `docs/앰플리파이연동가이드.md` : Amplify 배포 가이드
+- `docs/3.1_BRANCH_STATUS_BASELINE.md` : 브랜치 운영 기준선 및 상태 점검 결과
