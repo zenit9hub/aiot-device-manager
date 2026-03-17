@@ -1,0 +1,98 @@
+<mxfile host="app.diagrams.net" modified="2026-03-17T00:20:00.000Z" agent="Codex" version="29.6.3" type="device" compressed="false">
+  <diagram id="platform-flow" name="AIoT Service Flow (Final Presentation)">
+    <mxGraphModel dx="1460" dy="840" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="AIoT Device Manager End-to-End Flow (Lecture Final)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="40" y="24" width="980" height="44" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane1" value="Device &amp; Messaging (Core Lab)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=15;fontStyle=1;fontColor=#374151;" vertex="1" parent="1">
+          <mxGeometry x="70" y="84" width="320" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="lane2" value="Platform Core (Core Lab)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=15;fontStyle=1;fontColor=#374151;" vertex="1" parent="1">
+          <mxGeometry x="430" y="84" width="320" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="lane3" value="Scale-out Challenge (Optional)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=15;fontStyle=1;fontColor=#374151;" vertex="1" parent="1">
+          <mxGeometry x="430" y="456" width="360" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sensor" value="Temperature Sensor&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;Virtual Device&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#d97706;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="132" width="220" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="mqtt" value="EMQX&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;MQTT Broker&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fde2e4;strokeColor=#d90429;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="282" width="220" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="mqttx" value="MQTTX Client&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;Subscribe Test&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ecfccb;strokeColor=#65a30d;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="432" width="220" height="84" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fe" value="AIoT Device Manager Service FE Web&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;Local / AWS Amplify Hosting&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#047857;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="430" y="282" width="330" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="auth" value="Firebase Auth" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffedd5;strokeColor=#ea580c;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="820" y="242" width="220" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="firestore" value="Firestore&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;Primary Data Store&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#1d4ed8;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="820" y="332" width="220" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="storage" value="Firebase Storage&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;Optional Extension&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2fe;strokeColor=#0284c7;fontSize=14;fontStyle=1;dashed=1;dashPattern=8 8;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="282" width="240" height="84" as="geometry" />
+        </mxCell>
+
+        <mxCell id="be" value="AIoT Device Manager Service BE&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;Local (Express + MySQL)&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#1d4ed8;fontSize=14;fontStyle=1;dashed=1;dashPattern=12 12;" vertex="1" parent="1">
+          <mxGeometry x="430" y="500" width="330" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="rds" value="AWS RDS&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;Local Docker / Managed RDS&lt;/span&gt;&lt;/div&gt;" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#e9d5ff;strokeColor=#7e22ce;fontSize=14;fontStyle=1;dashed=1;dashPattern=12 12;" vertex="1" parent="1">
+          <mxGeometry x="500" y="640" width="200" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend-title" value="Legend" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="508" width="100" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-solid-line" value="" style="shape=line;html=1;strokeWidth=2;strokeColor=#4b5563;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="542" width="60" height="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-solid-text" value="Core Lab Flow" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontColor=#374151;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="532" width="150" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-dash-line" value="" style="shape=line;html=1;strokeWidth=2;strokeColor=#4b5563;dashed=1;dashPattern=8 8;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="570" width="60" height="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-dash-text" value="Optional Challenge Flow" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontColor=#374151;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="560" width="180" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge1" value="MQTT Publish" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4b5563;fontSize=12;" edge="1" parent="1" source="sensor" target="mqtt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" value="MQTT Subscribe / Realtime Stream" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4b5563;fontSize=12;" edge="1" parent="1" source="mqtt" target="fe">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" value="MQTT Subscribe Test" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#16a34a;fontSize=12;" edge="1" parent="1" source="mqttx" target="mqtt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" value="Firebase Auth SDK / ID Token" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#ea580c;fontSize=12;" edge="1" parent="1" source="fe" target="auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge5" value="Firestore SDK (Read / Write)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#1d4ed8;fontSize=12;" edge="1" parent="1" source="fe" target="firestore">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" value="Security Rules Context" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;endFill=0;strokeWidth=2;strokeColor=#6b7280;fontSize=12;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="auth" target="firestore">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge7" value="File Upload (Optional)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#0284c7;fontSize=12;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="fe" target="storage">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge8" value="HTTPS REST API (Phase 2)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4b5563;fontSize=12;dashed=1;dashPattern=12 12;" edge="1" parent="1" source="fe" target="be">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge9" value="SQL Read / Write (Phase 2)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#7e22ce;fontSize=12;dashed=1;dashPattern=12 12;" edge="1" parent="1" source="be" target="rds">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
