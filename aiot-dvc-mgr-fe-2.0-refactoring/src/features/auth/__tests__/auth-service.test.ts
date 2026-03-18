@@ -5,6 +5,7 @@ describe('authService', () => {
   it('exposes login/logout helpers', () => {
     expect(typeof authService.loginWithGoogle).toBe('function');
     expect(typeof authService.loginWithEmail).toBe('function');
+    expect(typeof authService.signUpWithEmail).toBe('function');
     expect(typeof authService.logout).toBe('function');
   });
 

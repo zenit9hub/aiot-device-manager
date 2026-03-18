@@ -2,6 +2,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
+  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   setPersistence,
@@ -54,6 +55,16 @@ export const authService = {
     }
     await ensurePersistence(auth);
     const result = await signInWithEmailAndPassword(auth, email, password);
+    return result.user;
+  },
+
+  async signUpWithEmail(email: string, password: string): Promise<User> {
+    const auth = getFirebaseAuth();
+    if (!auth) {
+      throw new Error('Firebase 인증이 구성되어 있지 않습니다.');
+    }
+    await ensurePersistence(auth);
+    const result = await createUserWithEmailAndPassword(auth, email, password);
     return result.user;
   },
 
